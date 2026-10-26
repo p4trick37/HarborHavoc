@@ -29,6 +29,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/LoseScreen.unity
     guid: fe7361d1bda286b428ce961d716aadbe
+  - enabled: 1
+    path: Assets/BattleMode/BattleArena.unity
+    guid: 575ec8c4f87649ae87bb95e58101dba8
   m_configObjects:
     com.unity.input.settings: {fileID: 11400000, guid: c2aaf288651d8dc4ca4edd3c5f7e14ac, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
