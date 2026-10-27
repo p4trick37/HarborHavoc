@@ -30,6 +30,15 @@ namespace HarborBattle.Editor
             manager.islandArt=Art("Assets/Art/small_island.png");
             manager.pickupArt=Art("Assets/Art/treasureclosed.png");
             manager.shotArt=Art("Assets/Art/Bullets/PlayerShot.png");
+            var campaign=EditorSceneManager.OpenScene("Assets/Scenes/Level1.unity",OpenSceneMode.Additive);
+            var sourceWater=campaign.GetRootGameObjects().First(obj=>obj.name=="Water");
+            var water=new GameObject("Battle Water",typeof(SpriteRenderer));
+            SceneManager.MoveGameObjectToScene(water,scene);
+            EditorUtility.CopySerialized(sourceWater.GetComponent<SpriteRenderer>(),water.GetComponent<SpriteRenderer>());
+            water.transform.position=sourceWater.transform.position;
+            water.transform.localScale=sourceWater.transform.localScale;
+            EditorSceneManager.CloseScene(campaign,true);
+            SceneManager.SetActiveScene(scene);
             var islands=new GameObject("Arena Islands");
             foreach(float y in new[] {-3.8f,3.8f})
             {

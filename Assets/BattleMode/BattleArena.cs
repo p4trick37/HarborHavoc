@@ -6,6 +6,18 @@ namespace HarborBattle
 {
     public enum PowerUp { None, RapidFire, Shotgun, Laser, FastBoat }
 
+    [System.Serializable]
+    public class PickupOption
+    {
+        public PowerUp kind;
+        [Min(0)] public float weight = 1;
+        [Min(1)] public float uses = 10;
+        public Color color = Color.white;
+        public Sprite icon;
+        public PickupOption(PowerUp kind, float uses, Color color)
+        { this.kind=kind; this.uses=uses; this.color=color; }
+    }
+
     // Local input stays here; simulation receives commands instead of reading devices.
     public struct BoatCommand
     {
@@ -22,6 +34,15 @@ namespace HarborBattle
         [Header("Project artwork")]
         public Sprite boatArt, cannonArt, islandArt, pickupArt, shotArt;
         public GameObject originalPlayerPrefab;
+        [Header("Random pickup pool (zero weight disables an entry)")]
+        public List<PickupOption> pickupPool = new List<PickupOption>
+        {
+            new PickupOption(PowerUp.RapidFire,40,Color.green),
+            new PickupOption(PowerUp.Shotgun,8,new Color(1,.45f,.25f)),
+            new PickupOption(PowerUp.Laser,5,Color.yellow),
+            new PickupOption(PowerUp.FastBoat,6,Color.magenta)
+        };
+        [Min(0.1f)] public float pickupRespawnSeconds=10;
         private Camera arenaCamera;
         private readonly List<Gamepad> pads = new List<Gamepad>();
         private readonly List<BattlePickup> pickups = new List<BattlePickup>();
@@ -58,7 +79,7 @@ namespace HarborBattle
                 ApplyArt(item,pickupArt,1f,2);
                 item.AddComponent<BoxCollider2D>().isTrigger = true;
                 var pickup = item.AddComponent<BattlePickup>();
-                pickup.Kind = (PowerUp)(i+1);
+                pickup.ResetPickup();
                 pickups.Add(pickup);
             }
             // Show the actual players immediately for keyboard testing, rather than
@@ -68,6 +89,24 @@ namespace HarborBattle
                 pads.Add(null); SpawnBoat(null,0);
                 pads.Add(null); SpawnBoat(null,1);
             }
+        }
+
+        public PickupOption RollPickup()
+        {
+            float total=0;
+            foreach(var option in pickupPool)
+                if(option!=null && option.kind!=PowerUp.None) total+=Mathf.Max(0,option.weight);
+            if(total<=0) return null;
+            float roll=Random.value*total;
+            PickupOption fallback=null;
+            foreach(var option in pickupPool)
+            {
+                if(option==null || option.kind==PowerUp.None || option.weight<=0) continue;
+                fallback=option;
+                roll-=option.weight;
+                if(roll<0) return option;
+            }
+            return fallback;
         }
 
         public static void ApplyArt(GameObject obj, Sprite sprite, float height, int order)
@@ -232,18 +271,29 @@ namespace HarborBattle
 
         private void OnGUI()
         {
-            GUI.Box(new Rect(8,8,Screen.width-16,100),GUIContent.none);
-            var style=new GUIStyle(GUI.skin.label) { fontSize=20, alignment=TextAnchor.MiddleCenter };
+            var style=new GUIStyle(GUI.skin.label) { fontSize=16, alignment=TextAnchor.MiddleCenter, wordWrap=true };
             string heading=result ?? (countingDown ? "Ready: "+Mathf.CeilToInt(countdown) : Running ? (CanSimulate ? "LAST BOAT AFLOAT" : "Reconnect controller to resume") : "ENTER: keyboard match   |   Controllers: START to join, A to begin");
-            GUI.Label(new Rect(0,8,Screen.width,40),heading,style);
-            GUI.Label(new Rect(0,45,Screen.width,30),"Left stick: sail   |   Right stick: aim   |   RT: fire   |   LT: boost   "+(result!=null ? "| START: new match" : "| B: reset lobby"));
-            GUI.Label(new Rect(15,75,Screen.width,25),"P1: WASD / mouse aim / click or Space / Left Shift boost     P2: arrows move + aim / Right Ctrl fire / Right Shift boost     Esc: lobby");
+            float panelWidth=Mathf.Min(230,Screen.width*.27f);
+            GUI.Label(new Rect(panelWidth+20,8,Screen.width-2*panelWidth-40,65),heading,style);
+            if(!Running)
+            {
+                GUI.Box(new Rect(Screen.width*.2f,Screen.height*.43f,Screen.width*.6f,100),GUIContent.none);
+                GUI.Label(new Rect(Screen.width*.22f,Screen.height*.44f,Screen.width*.56f,95),
+                    "P1: WASD / mouse aim / click / Left Shift boost\nP2: arrows move + aim / Right Ctrl fire / Right Shift boost\nController: sticks move + aim / RT fire / LT boost\nEsc: lobby",style);
+            }
             for(int i=0;i<Boats.Count;i++)
             {
-                GUI.Box(new Rect(10+i*Screen.width/4f,Screen.height-70,Screen.width/4f-20,65),GUIContent.none);
-                var boat=Boats[i]; GUI.color=colors[i];
-                GUI.Label(new Rect(15+i*Screen.width/4f,Screen.height-65,Screen.width/4f,60),
-                    "P"+(i+1)+"  "+(boat.Alive ? "Hull: "+boat.Health : "ELIMINATED")+"\n"+boat.PowerLabel);
+                float x=i%2==0 ? 12 : Screen.width-panelWidth-12;
+                float y=i<2 ? 12 : Screen.height-100;
+                GUI.color=Color.white;
+                GUI.Box(new Rect(x,y,panelWidth,88),GUIContent.none);
+                var boat=Boats[i];
+                GUI.Label(new Rect(x+10,y+5,panelWidth-20,24),"P"+(i+1)+"  "+(boat.Alive ? "Hull: "+boat.Health+" / 100" : "ELIMINATED"));
+                GUI.color=new Color(.08f,.1f,.12f);
+                GUI.DrawTexture(new Rect(x+10,y+32,panelWidth-20,14),Texture2D.whiteTexture);
+                GUI.color=colors[i];
+                GUI.DrawTexture(new Rect(x+10,y+32,(panelWidth-20)*Mathf.Clamp01(boat.Health/100f),14),Texture2D.whiteTexture);
+                GUI.Label(new Rect(x+10,y+52,panelWidth-20,26),boat.PowerLabel);
                 if(boat.Alive)
                 {
                     var position=arenaCamera.WorldToScreenPoint(boat.transform.position);
@@ -267,6 +317,7 @@ namespace HarborBattle
         public string PowerLabel => power==PowerUp.None ? "Basic cannon" : power+": "+Mathf.CeilToInt(remaining)+(power==PowerUp.FastBoat ? " fuel" : " shots");
         public void Submit(BoatCommand input) { command=input; }
         public void Collect(PowerUp kind) { power=kind; remaining=kind==PowerUp.RapidFire ? 40 : kind==PowerUp.Shotgun ? 8 : kind==PowerUp.Laser ? 5 : 6; }
+        public void Collect(PickupOption option) { power=option.kind; remaining=Mathf.Max(1,option.uses); }
         public void Damage(int amount)
         {
             if (!Alive || !BattleArena.Instance.CanSimulate) return;
@@ -346,9 +397,19 @@ namespace HarborBattle
 
     public class BattlePickup : MonoBehaviour
     {
-        public PowerUp Kind;
+        private PickupOption option;
         private float respawn;
-        public void ResetPickup() { respawn=0; GetComponent<Collider2D>().enabled=true; GetComponentInChildren<SpriteRenderer>().enabled=true; }
+        public void ResetPickup()
+        {
+            option=BattleArena.Instance.RollPickup();
+            respawn=0;
+            var renderer=GetComponentInChildren<SpriteRenderer>();
+            GetComponent<Collider2D>().enabled=option!=null;
+            renderer.enabled=option!=null;
+            if(option==null) return;
+            BattleArena.ApplyArt(gameObject,option.icon!=null ? option.icon : BattleArena.Instance.pickupArt,1,2);
+            renderer.color=option.color;
+        }
         private void Update()
         {
             if(!BattleArena.Instance.CanSimulate || respawn<=0) return;
@@ -358,15 +419,16 @@ namespace HarborBattle
         {
             var boat=other.GetComponent<BattleBoat>();
             if(respawn>0 || boat==null || !boat.Alive || !BattleArena.Instance.CanSimulate) return;
-            boat.Collect(Kind); respawn=10;
+            if(option==null) return;
+            boat.Collect(option); respawn=BattleArena.Instance.pickupRespawnSeconds;
             GetComponent<Collider2D>().enabled=false;
             GetComponentInChildren<SpriteRenderer>().enabled=false;
         }
         private void OnGUI()
         {
-            if(respawn>0 || Camera.main==null) return;
+            if(option==null || respawn>0 || Camera.main==null) return;
             var point=Camera.main.WorldToScreenPoint(transform.position);
-            GUI.Label(new Rect(point.x-45,Screen.height-point.y-35,100,25),Kind.ToString());
+            GUI.Label(new Rect(point.x-45,Screen.height-point.y-35,100,25),option.kind.ToString());
         }
     }
 }

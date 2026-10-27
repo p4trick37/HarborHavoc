@@ -13,3 +13,7 @@ Boats, cannons, islands, treasure chest pickups, and projectiles use existing pr
 BattleBoat accepts BoatCommand input independently from controller polling. This is a starting boundary for future online input and authority work; there is no network implementation yet. Balance constants are prototype defaults in the source.
 
 Validation still needs Unity Play Mode with two or four controllers, including disconnect/reconnect, all pickups, elimination, and rematches. Compilation alone does not verify rendering or controller behavior.
+
+The battle scene reuses the Level 1 water SpriteRenderer and animated material, without its campaign fog script or trigger collider. Health bars are anchored to the corners: P1 top left, P2 top right, P3 bottom left, P4 bottom right.
+
+Select Battle Arena in the scene and edit Random Pickup Pool. Each entry has a type, spawn weight, uses (ammo or seconds of boost fuel), color, and optional sprite icon. Entries are rolled independently on initial spawn, respawn, and round reset; duplicates can appear. Zero weight disables an entry. An empty or entirely disabled pool hides all pickups. Add entries with the Inspector list + button; introducing a new kind of weapon behavior also requires implementing its PowerUp enum value and combat behavior. Pickup Respawn Seconds controls the delay.
