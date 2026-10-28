@@ -66,8 +66,6 @@ namespace HarborBattle
         private string result;
         private float countdown;
         private bool countingDown;
-        private bool soloTest;
-        private readonly Dictionary<Gamepad,InputActionAsset> lobbyInputs=new Dictionary<Gamepad,InputActionAsset>();
         private static Sprite square;
         private static Material artMaterial;
         private readonly Color[] colors = { Color.cyan, new Color(1,.45f,.25f), Color.yellow, Color.magenta };
@@ -208,15 +206,9 @@ namespace HarborBattle
 
         private void Update()
         {
-            foreach(var pad in Gamepad.all)
-                if(!lobbyInputs.ContainsKey(pad))
-                {
-                    var template=originalPlayerPrefab!=null ? originalPlayerPrefab.GetComponent<PlayerInput>()?.actions : null;
-                    lobbyInputs.Add(pad,BattleInput.ForDevice(template,pad));
-                }
             if (!Running && !countingDown)
                 foreach (var pad in Gamepad.all)
-                    if (BattleInput.Pressed(lobbyInputs[pad],"Battle/Reset")) { Restart(); break; }
+                    if (pad.buttonEast.wasPressedThisFrame) { Restart(); break; }
             var keyboard=Keyboard.current;
             if(keyboard!=null && keyboard.escapeKey.wasPressedThisFrame) Restart();
             if(keyboard!=null && keyboard.enterKey.wasPressedThisFrame)
@@ -226,23 +218,17 @@ namespace HarborBattle
                 {
                     // Enter provides a complete two-player keyboard test without controllers.
                     if(pads.Count==0) { pads.Add(null); SpawnBoat(null,0); pads.Add(null); SpawnBoat(null,1); }
-                    else if(pads.Count==1) { pads.Add(null); SpawnBoat(null,1); }
-                    BeginMatch(false);
+                    if(pads.Count>=2) { countdown=3; countingDown=true; }
                 }
             }
             if (!Running && result == null && !countingDown)
             {
                 foreach (var pad in Gamepad.all)
-                {
-                    var actions=lobbyInputs[pad];
-                    if(!pads.Contains(pad))
-                    {
-                        if(BattleInput.Pressed(actions,"Battle/Join") && pads.Count<4)
-                        { pads.Add(pad); SpawnBoat(pad,pads.Count-1); }
-                    }
-                    else if(BattleInput.Pressed(actions,"Battle/StartMatch"))
-                    { BeginMatch(pads.Count==1); break; }
-                }
+                    if (pad.startButton.wasPressedThisFrame && !pads.Contains(pad) && pads.Count<4)
+                    { pads.Add(pad); SpawnBoat(pad,pads.Count-1); }
+                if (pads.Count>=2)
+                    foreach (var pad in pads)
+                        if (pad!=null && pad.buttonSouth.wasPressedThisFrame) { countdown=3; countingDown=true; break; }
             }
             if (countingDown)
             {
@@ -260,28 +246,14 @@ namespace HarborBattle
                     if (!boat.Alive) continue;
                     alive++; survivor=boat;
                     var pad=pads[boat.Index];
-                    boat.Submit(pad==null ? KeyboardCommand(boat) : BattleInput.Read(boat.GetComponent<PlayerInput>()?.actions));
+                    boat.Submit(pad==null ? KeyboardCommand(boat) : new BoatCommand { Move=pad.leftStick.ReadValue(), Aim=pad.rightStick.ReadValue(),
+                        Fire=pad.rightTrigger.isPressed, Boost=pad.leftTrigger.isPressed, Activate=pad.buttonWest.wasPressedThisFrame });
                 }
-                if ((!soloTest && alive<=1) || alive==0) { Running=false; result=alive==1 ? "Player "+(survivor.Index+1)+" wins!" : "Draw!"; }
+                if (alive<=1) { Running=false; result=alive==1 ? "Player "+(survivor.Index+1)+" wins!" : "Draw!"; }
             }
             if (result!=null)
                 foreach (var pad in Gamepad.all)
-                    if (BattleInput.Pressed(lobbyInputs[pad],"Battle/StartMatch")) { Restart(); break; }
-        }
-
-        private void BeginMatch(bool forceSolo)
-        {
-            if(pads.Count==0 || (pads.Count<2 && !forceSolo)) return;
-            soloTest=forceSolo;
-            countdown=3;
-            countingDown=true;
-        }
-
-        private void OnDestroy()
-        {
-            foreach(var actions in lobbyInputs.Values)
-                if(actions!=null) { actions.Disable(); Destroy(actions); }
-            if(Instance==this) Instance=null;
+                    if (pad.startButton.wasPressedThisFrame) { Restart(); break; }
         }
 
         public bool CanSimulate
@@ -293,15 +265,13 @@ namespace HarborBattle
         {
             var k=Keyboard.current;
             if(k==null) return default;
-            if(boat.Index==pads.IndexOf(null))
+            if(boat.Index==0)
             {
                 Vector2 aim=Vector2.zero;
                 if(Mouse.current!=null)
                     aim=(Vector2)arenaCamera.ScreenToWorldPoint(Mouse.current.position.ReadValue())-(Vector2)boat.transform.position;
-                var mapped=BattleInput.Read(boat.KeyboardActions);
-                mapped.Aim=aim;
-                mapped.Fire|=k.spaceKey.isPressed;
-                return mapped;
+                return new BoatCommand { Move=new Vector2((k.dKey.isPressed?1:0)-(k.aKey.isPressed?1:0),(k.wKey.isPressed?1:0)-(k.sKey.isPressed?1:0)),
+                    Aim=aim, Fire=(Mouse.current!=null && Mouse.current.leftButton.isPressed)||k.spaceKey.isPressed, Boost=k.leftShiftKey.isPressed, Activate=k.eKey.wasPressedThisFrame };
             }
             var move=new Vector2((k.rightArrowKey.isPressed?1:0)-(k.leftArrowKey.isPressed?1:0),(k.upArrowKey.isPressed?1:0)-(k.downArrowKey.isPressed?1:0));
             return new BoatCommand { Move=move, Aim=move, Fire=k.rightCtrlKey.isPressed, Boost=k.rightShiftKey.isPressed, Activate=k.enterKey.wasPressedThisFrame };
@@ -310,79 +280,50 @@ namespace HarborBattle
         private void SpawnBoat(Gamepad pad,int index)
         {
             var positions=new[] { new Vector2(-24,-12),new Vector2(24,12),new Vector2(-24,12),new Vector2(24,-12) };
-            // Configure an inactive clone before any campaign Awake/Start can run.
-            var staging=new GameObject("Battle Player Staging");
-            staging.SetActive(false);
-            GameObject obj;
-            if(originalPlayerPrefab!=null) obj=Instantiate(originalPlayerPrefab,staging.transform,false);
-            else
+            var obj=Visual("Player "+(index+1)+" Boat",positions[index],new Vector2(.8f,1.5f),Color.white);
+            ApplyArt(obj,boatArt,1.8f,3);
+            // Reuse the campaign player's Boat renderer, not the pickup artwork.
+            // Clone only its visual child so campaign input/health scripts never run.
+            if(originalPlayerPrefab!=null)
             {
-                obj=Visual("Boat",positions[index],new Vector2(.8f,1.5f),Color.white);
-                obj.transform.SetParent(staging.transform,false);
-                ApplyArt(obj,boatArt,1.8f,3);
-            }
-            obj.name="Player "+(index+1)+" Boat";
-            obj.transform.position=positions[index];
-            var boat=obj.GetComponent<BattleBoat>() ?? obj.AddComponent<BattleBoat>();
-            boat.Index=index;
-            var campaignController=obj.GetComponent<PlayerController>();
-            if(campaignController!=null) campaignController.enabled=false;
-            var campaignHealth=obj.GetComponent<PlayerHealth>();
-            if(campaignHealth!=null) campaignHealth.enabled=false;
-            foreach(var canvas in obj.GetComponentsInChildren<Canvas>(true)) canvas.gameObject.SetActive(false);
-            var collider=obj.GetComponent<Collider2D>();
-            if(collider==null) obj.AddComponent<BoxCollider2D>().size=new Vector2(.8f,1.5f);
-            var body=obj.GetComponent<Rigidbody2D>() ?? obj.AddComponent<Rigidbody2D>();
-            body.gravityScale=0; body.freezeRotation=true; body.collisionDetectionMode=CollisionDetectionMode2D.Continuous;
-            foreach(var child in obj.GetComponentsInChildren<Transform>(true))
-            {
-                if(child.name=="Turret") boat.Turret=child;
-                var renderer=child.GetComponent<SpriteRenderer>();
-                if(renderer!=null) renderer.sortingOrder=child.name=="Turret" ? 4 : 3;
-            }
-            if(boat.Turret==null)
-            {
-                var turret=Visual("Turret",positions[index],new Vector2(.22f,1),Color.white);
-                ApplyArt(turret,cannonArt,.9f,4);
-                turret.transform.SetParent(obj.transform,true);
-                boat.Turret=turret.transform;
-            }
-            var input=obj.GetComponent<PlayerInput>();
-            if(input!=null)
-            {
-                input.notificationBehavior=PlayerNotifications.InvokeCSharpEvents;
-                input.neverAutoSwitchControlSchemes=true;
-                // PlayerInput owns a separate action asset for every cloned boat.
-                input.actions=Instantiate(input.actions);
-                if(pad==null)
+                var source=originalPlayerPrefab.transform.Find("Boat");
+                if(source!=null)
                 {
-                    input.enabled=false;
-                    if(index==pads.IndexOf(null)) boat.KeyboardActions=BattleInput.ForKeyboard(input.actions);
+                    obj.transform.Find("Visual").gameObject.SetActive(false);
+                    var hull=Instantiate(source.gameObject,obj.transform,false);
+                    hull.name="Boat Hull";
+                    hull.transform.localPosition=Vector3.zero;
+                    hull.transform.localRotation=Quaternion.identity;
+                    var renderer=hull.GetComponent<SpriteRenderer>();
+                    renderer.color=Color.white;
+                    renderer.sortingOrder=3;
+                    hull.transform.localScale=Vector3.one*(1.8f/renderer.sprite.bounds.size.y);
                 }
             }
-            obj.transform.SetParent(null,true);
-            Destroy(staging);
-            if(input!=null && pad!=null)
-            {
-                input.SwitchCurrentControlScheme("Controller",pad);
-                input.actions.FindActionMap("Player",true).Enable();
-                input.actions.FindActionMap("Battle",true).Enable();
-            }
+            obj.AddComponent<BoxCollider2D>().size=new Vector2(.8f,1.5f);
+            var body=obj.AddComponent<Rigidbody2D>();
+            body.gravityScale=0; body.freezeRotation=true; body.collisionDetectionMode=CollisionDetectionMode2D.Continuous;
+            var boat=obj.AddComponent<BattleBoat>(); boat.Index=index;
+            var turret=Visual("Cannon",positions[index],new Vector2(.22f,1),Color.white);
+            ApplyArt(turret,cannonArt,.9f,4);
+            turret.transform.SetParent(obj.transform,true);
+            boat.Turret=turret.transform;
             Boats.Add(boat);
         }
+
         private void Restart()
         {
             foreach(var effect in FindObjectsByType<BattleVfxLifetime>(FindObjectsSortMode.None)) Destroy(effect.gameObject);
             foreach (var boat in Boats) Destroy(boat.gameObject);
             foreach (var shot in FindObjectsByType<BattleShot>(FindObjectsSortMode.None)) Destroy(shot.gameObject);
-            Boats.Clear(); pads.Clear(); result=null; Running=false; countingDown=false; soloTest=false;
+            Boats.Clear(); pads.Clear(); result=null; Running=false; countingDown=false;
             foreach (var pickup in pickups) pickup.ResetPickup();
         }
 
         private void OnGUI()
         {
             var style=new GUIStyle(GUI.skin.label) { fontSize=16, alignment=TextAnchor.MiddleCenter, wordWrap=true };
-            string heading=result ?? (countingDown ? "Ready: "+Mathf.CeilToInt(countdown) : Running ? (CanSimulate ? (soloTest ? "SOLO TEST" : "LAST BOAT AFLOAT") : "Reconnect controller to resume") : pads.Count+" / 4 joined\nSTART: join; press again to start (one player = solo test)\nENTER: add keyboard opponent / start");
+            string heading=result ?? (countingDown ? "Ready: "+Mathf.CeilToInt(countdown) : Running ? (CanSimulate ? "LAST BOAT AFLOAT" : "Reconnect controller to resume") : "ENTER: keyboard match   |   Controllers: START to join, A to begin");
             float panelWidth=Mathf.Min(230,Screen.width*.27f);
             GUI.Label(new Rect(panelWidth+20,8,Screen.width-2*panelWidth-40,65),heading,style);
             if(!Running)
@@ -416,13 +357,6 @@ namespace HarborBattle
 
     public class BattleBoat : MonoBehaviour
     {
-        public InputActionAsset KeyboardActions;
-        private void OnDestroy()
-        {
-            if(KeyboardActions!=null) { KeyboardActions.Disable(); Destroy(KeyboardActions); }
-            var input=GetComponent<PlayerInput>();
-            if(input!=null && input.actions!=null) { input.actions.Disable(); Destroy(input.actions); }
-        }
         public int Index;
         public Transform Turret;
         public int Health { get; private set; } = 100;

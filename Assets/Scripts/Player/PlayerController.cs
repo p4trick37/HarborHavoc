@@ -135,13 +135,6 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        // The battle scene uses this complete prefab and its PlayerInput mappings,
-        // but per-player battle simulation replaces campaign progression/combat.
-        if (GetComponent<HarborBattle.BattleBoat>() != null)
-        {
-            enabled = false;
-            return;
-        }
         Camera currentCamera = Camera.main;
         cursorCanvas.worldCamera = currentCamera;
         Cursor.visible = false;
