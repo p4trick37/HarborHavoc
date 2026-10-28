@@ -330,7 +330,7 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            ControllerCursorPos();
+            
             if (usingController == false)
             {
                 PlayerKeyboardMovement(true);
@@ -340,6 +340,7 @@ public class PlayerController : MonoBehaviour
             {
                 PlayerControllerMovement(true);
             }
+            ControllerCursorPos();
             TurretMovement(true);
             InputForShooting(true);
         }
@@ -698,33 +699,34 @@ public class PlayerController : MonoBehaviour
         Vector2 mousePosition = mousePositionInput - playerScreen;
         return mousePosition;
     }
-    private void ControllerCursorPos()
+    public void ControllerCursorPos()
     {
         if(gameObject.GetComponent<PlayerInput>().currentControlScheme.Equals(CONTROLLERSCHEME))
         {
             cursorImageTransform.position += new Vector3(lastRightInput.x, lastRightInput.y, 0) * controllerSensitivity * Time.deltaTime;
 
-            if (cursorImageTransform.anchoredPosition.x > 935)
-            {
-                cursorImageTransform.anchoredPosition = new Vector3(935, cursorImageTransform.anchoredPosition.y, cursorImageTransform.position.z);
-            }
-            if (cursorImageTransform.anchoredPosition.x < -935)
-            {
-                cursorImageTransform.anchoredPosition = new Vector3(-935, cursorImageTransform.anchoredPosition.y, cursorImageTransform.position.z);
-            }
-            if (cursorImageTransform.anchoredPosition.y > 515)
-            {
-                cursorImageTransform.anchoredPosition = new Vector3(cursorImageTransform.anchoredPosition.x, 515, cursorImageTransform.position.z);
-            }
-            if (cursorImageTransform.anchoredPosition.y < -515)
-            {
-                cursorImageTransform.anchoredPosition = new Vector3(cursorImageTransform.anchoredPosition.x, -515, cursorImageTransform.position.z);
-            }
+            // if (cursorImageTransform.anchoredPosition.x > 935)
+            // {
+            //     cursorImageTransform.anchoredPosition = new Vector3(935, cursorImageTransform.anchoredPosition.y, cursorImageTransform.position.z);
+            // }
+            // if (cursorImageTransform.anchoredPosition.x < -935)
+            // {
+            //     cursorImageTransform.anchoredPosition = new Vector3(-935, cursorImageTransform.anchoredPosition.y, cursorImageTransform.position.z);
+            // }
+            // if (cursorImageTransform.anchoredPosition.y > 515)
+            // {
+            //     cursorImageTransform.anchoredPosition = new Vector3(cursorImageTransform.anchoredPosition.x, 515, cursorImageTransform.position.z);
+            // }
+            // if (cursorImageTransform.anchoredPosition.y < -515)
+            // {
+            //     cursorImageTransform.anchoredPosition = new Vector3(cursorImageTransform.anchoredPosition.x, -515, cursorImageTransform.position.z);
+            // }
         }
         else
         {
             Vector2 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            cursorImageTransform.position = worldPosition;
+            //cursorImageTransform.position = new Vector3(worldPosition.x, worldPosition.y, cursorImageTransform.position.z);
+            cursorImageTransform.position = Input.mousePosition;
             
         }
         
@@ -804,7 +806,7 @@ public class PlayerController : MonoBehaviour
 
     private Vector2 CursorPositionController(RectTransform image)
     {
-        Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(Camera.main, image.position);
+        Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(null, image.position);
         Vector2 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
         float positionX = worldPos.x - turretLocation.position.x;
         float positionY = worldPos.y - turretLocation.position.y;

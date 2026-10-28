@@ -52,7 +52,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c80fc8b555d5c0749b8dce0a322ee3ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  controllerSensitivity: 25
+  controllerSensitivity: 1000
   cursorCanvas: {fileID: 6476002893256023200}
   cursorImageTransform: {fileID: 2690961808947131737}
   usingSemi: 0
@@ -5080,7 +5080,7 @@ Canvas:
   m_GameObject: {fileID: 3920859044166274660}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 1
+  m_RenderMode: 0
   m_Camera: {fileID: 0}
   m_PlaneDistance: 1
   m_PixelPerfect: 0
