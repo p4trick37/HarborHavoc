@@ -146,10 +146,6 @@ public class PlayerController : MonoBehaviour
         cursorCanvas.worldCamera = currentCamera;
         Cursor.visible = false;
         usingController = true;
-        if(gameObject.GetComponent<PlayerInput>().currentControlScheme == KEYBOARDSCHEME)
-        {
-            
-        }
         upgradeManager = FindFirstObjectByType<UpgradeManager>();
         if (upgradeManager != null)
         {
