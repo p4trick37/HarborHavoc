@@ -20,10 +20,11 @@ namespace HarborBattle.Editor
             cameraObject.transform.position=new Vector3(0,0,-10);
             var camera=cameraObject.GetComponent<Camera>();
             camera.orthographic=true;
-            camera.orthographicSize=11.5f;
+            camera.orthographicSize=24f;
             camera.clearFlags=CameraClearFlags.SolidColor;
             camera.backgroundColor=new Color(.025f,.15f,.22f);
             var manager=new GameObject("Battle Arena").AddComponent<BattleArena>();
+            manager.vfx=AssetDatabase.LoadAssetAtPath<BattleVfxProfile>("Assets/BattleMode/BattleVfx.asset");
             manager.boatArt=Art("Assets/Art/ship 1.png");
             manager.originalPlayerPrefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player.prefab");
             manager.cannonArt=Art("Assets/Art/cannon.png");
@@ -36,11 +37,11 @@ namespace HarborBattle.Editor
             SceneManager.MoveGameObjectToScene(water,scene);
             EditorUtility.CopySerialized(sourceWater.GetComponent<SpriteRenderer>(),water.GetComponent<SpriteRenderer>());
             water.transform.position=sourceWater.transform.position;
-            water.transform.localScale=sourceWater.transform.localScale;
+            water.transform.localScale=sourceWater.transform.localScale*2;
             EditorSceneManager.CloseScene(campaign,true);
             SceneManager.SetActiveScene(scene);
             var islands=new GameObject("Arena Islands");
-            foreach(float y in new[] {-3.8f,3.8f})
+            foreach(float y in new[] {-7.6f,7.6f})
             {
                 var island=new GameObject("Island",typeof(SpriteRenderer),typeof(CircleCollider2D));
                 island.transform.SetParent(islands.transform);

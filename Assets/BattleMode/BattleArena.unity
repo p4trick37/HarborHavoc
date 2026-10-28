@@ -62,7 +62,7 @@ Camera:
   far clip plane: 500
   field of view: 60
   orthographic: 1
-  orthographic size: 11.5
+  orthographic size: 24
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -173,28 +173,67 @@ MonoBehaviour:
   islandArt: {fileID: 7837861893977739697, guid: d66cc6bf4e7ee2c419c8286aade4f7fc, type: 3}
   pickupArt: {fileID: -7794329322578014380, guid: ecaf3b9d7c743234d9ed3637de66bf8a, type: 3}
   shotArt: {fileID: 6635707809435179332, guid: edbec22aebf34a34aa778348a7cefcc2, type: 3}
+  vfx: {fileID: 11400000, guid: 83f68de8837349209dc35705f97ea810, type: 2}
   pickupPool:
   - kind: 1
     weight: 1
-    uses: 40
+    duration: 5
     color: {r: 0, g: 1, b: 0, a: 1}
     icon: {fileID: 0}
   - kind: 2
     weight: 1
-    uses: 8
+    duration: 5
     color: {r: 1, g: 0.45, b: 0.25, a: 1}
     icon: {fileID: 0}
   - kind: 3
     weight: 1
-    uses: 5
+    duration: 5
     color: {r: 1, g: 1, b: 0, a: 1}
     icon: {fileID: 0}
   - kind: 4
     weight: 1
-    uses: 6
+    duration: 5
     color: {r: 1, g: 0, b: 1, a: 1}
     icon: {fileID: 0}
+  - kind: 5
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 6
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 7
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 8
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 9
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 10
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
   pickupRespawnSeconds: 10
+  pickupCount: 10
+  cameraPadding: 5
+  freezeSeconds: 1
+  slowSeconds: 3
+  slowMultiplier: 0.5
+  burnSeconds: 3
+  burnDamagePerSecond: 6
+  shockwaveRadius: 6
 --- !u!1 &200
 GameObject:
   m_ObjectHideFlags: 0
@@ -213,7 +252,7 @@ Transform:
   m_GameObject: {fileID: 200}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -3.8, z: 0}
+  m_LocalPosition: {x: 0, y: -7.6, z: 0}
   m_LocalScale: {x: 0.1644737, y: 0.1644737, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -305,7 +344,7 @@ Transform:
   m_GameObject: {fileID: 300}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 3.8, z: 0}
+  m_LocalPosition: {x: 0, y: 7.6, z: 0}
   m_LocalScale: {x: 0.1644737, y: 0.1644737, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -464,7 +503,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 65.19807, y: 65.19807, z: 65.19807}
+  m_LocalScale: {x: 130.39614, y: 130.39614, z: 130.39614}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
