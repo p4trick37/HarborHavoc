@@ -485,7 +485,7 @@ Camera:
   far clip plane: 500
   field of view: 60
   orthographic: 1
-  orthographic size: 11.5
+  orthographic size: 24
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -586,43 +586,100 @@ MonoBehaviour:
   m_GameObject: {fileID: 1553736981}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 621567455fd1c4ceb811cc8a00b6a1a5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInputManager
-  m_NotificationBehavior: 0
-  m_MaxPlayerCount: -1
-  m_AllowJoining: 1
-  m_JoinBehavior: 0
-  m_PlayerJoinedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_PlayerLeftEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_JoinAction:
-    m_UseReference: 0
-    m_Action:
-      m_Name: 
-      m_Type: 0
-      m_ExpectedControlType: 
-      m_Id: 9f003095-4f5f-4e78-8eb0-92277be3f9ad
-      m_Processors: 
-      m_Interactions: 
-      m_SingletonActionBindings: []
-      m_Flags: 0
-    m_Reference: {fileID: 0}
-  m_PlayerPrefab: {fileID: 473378636629930842, guid: 682165561cd68334db40c6b988220a6b, type: 3}
-  m_SplitScreen: 0
-  m_MaintainAspectRatioInSplitScreen: 0
-  m_FixedNumberOfSplitScreens: -1
-  m_SplitScreenRect:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1
-    height: 1
---- !u!4 &1553736983
+  m_Script: {fileID: 11500000, guid: 535e1b0235b14dc42bd6a47799747e4c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::HarborBattle.BattleArena
+  boatArt: {fileID: 4736449065902978594, guid: 64bb0b227af7c984f88409b37b4df9e3, type: 3}
+  originalPlayerPrefab: {fileID: 473378636629930842, guid: 682165561cd68334db40c6b988220a6b, type: 3}
+  cannonArt: {fileID: -5333349321414413341, guid: 9724822472498084eb60c68b378a2258, type: 3}
+  islandArt: {fileID: 7837861893977739697, guid: d66cc6bf4e7ee2c419c8286aade4f7fc, type: 3}
+  pickupArt: {fileID: -7794329322578014380, guid: ecaf3b9d7c743234d9ed3637de66bf8a, type: 3}
+  shotArt: {fileID: 6635707809435179332, guid: edbec22aebf34a34aa778348a7cefcc2, type: 3}
+  vfx: {fileID: 11400000, guid: 83f68de8837349209dc35705f97ea810, type: 2}
+  pickupPool:
+  - kind: 1
+    weight: 1
+    duration: 5
+    color: {r: 0, g: 1, b: 0, a: 1}
+    icon: {fileID: 0}
+  - kind: 2
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 0.45, b: 0.25, a: 1}
+    icon: {fileID: 0}
+  - kind: 3
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 0, a: 1}
+    icon: {fileID: 0}
+  - kind: 4
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 0, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 5
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 6
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 7
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 8
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 9
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 10
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  pickupRespawnSeconds: 10
+  pickupCount: 10
+  cameraPadding: 5
+  freezeSeconds: 1
+  slowSeconds: 3
+  slowMultiplier: 0.5
+  burnSeconds: 3
+  burnDamagePerSecond: 6
+  shockwaveRadius: 6
+--- !u!1 &200
+GameObject:
+  m_ObjectHideFlags: 0
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 201}
+  - component: {fileID: 202}
+  - component: {fileID: 203}
+  m_Layer: 0
+  m_Name: Arena Island
+  m_TagString: Untagged
+  m_IsActive: 1
+--- !u!4 &201
 Transform:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 200}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -7.6, z: 0}
+  m_LocalScale: {x: 0.1644737, y: 0.1644737, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+--- !u!212 &202
+SpriteRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -630,8 +687,166 @@ Transform:
   m_GameObject: {fileID: 1553736981}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.81641, y: -0.06798, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 7.6, z: 0}
+  m_LocalScale: {x: 0.1644737, y: 0.1644737, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+--- !u!212 &302
+SpriteRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 300}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -50
+  m_Sprite: {fileID: 7837861893977739697, guid: d66cc6bf4e7ee2c419c8286aade4f7fc, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
+  m_SpriteSortPoint: 0
+--- !u!58 &303
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_GameObject: {fileID: 300}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 9.424
+--- !u!1 &652329450
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 652329452}
+  - component: {fileID: 652329451}
+  m_Layer: 4
+  m_Name: Battle Water
+  m_TagString: Water
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!212 &652329451
+SpriteRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 652329450}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 6edd331b7dad11742981da02b317d70e, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -50
+  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
+  m_SpriteSortPoint: 0
+--- !u!4 &652329452
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 652329450}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 130.39614, y: 130.39614, z: 130.39614}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -642,6 +857,7 @@ SceneRoots:
   m_Roots:
   - {fileID: 1447264199}
   - {fileID: 101}
+  - {fileID: 652329452}
   - {fileID: 201}
   - {fileID: 301}
   - {fileID: 1553736983}
