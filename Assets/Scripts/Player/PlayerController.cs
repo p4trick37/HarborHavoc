@@ -348,7 +348,6 @@ public class PlayerController : MonoBehaviour
     
         
     }
-
     private void FixedUpdate()
     {
         //Shooting the bullet
