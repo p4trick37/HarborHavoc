@@ -46,7 +46,6 @@ public class UsersInputChoice : MonoBehaviour
         
         AllowController();
         AllowMouse();
-        Debug.Log(mouseUsed);
     }
 
     public void UseController()
