@@ -3,21 +3,15 @@ using System.Collections;
 using Unity.Jobs;
 using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.InputSystem;
-//using UnityEngine.UIElements;
+using UnityEngine.UIElements;
 
 public class PlayerController : MonoBehaviour
 {
     private ControllerInput controls;
-    //private Vector2 move;
-    //private Vector2 cursorMove;
-    //private bool triggerPressed;
-   // private bool triggerHeld
-   private Vector2 lastRightInput;
-   private Vector2 lastLeftInput;
-
-   private const string KEYBOARDSCHEME = "Keyboard";
-   private const string CONTROLLERSCHEME = "Controller";
+    private Vector2 move;
+    private Vector2 cursorMove;
+    private bool triggerPressed;
+    private bool triggerHeld;
 
 
 
@@ -27,7 +21,6 @@ public class PlayerController : MonoBehaviour
     [Header("Controller")]
     public static bool usingController;
     [SerializeField] private float controllerSensitivity;
-    [SerializeField] private Canvas cursorCanvas;
     [SerializeField] private RectTransform cursorImageTransform;
     #endregion
     #region Current Weapon
@@ -135,14 +128,6 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        Camera currentCamera = Camera.main;
-        cursorCanvas.worldCamera = currentCamera;
-        Cursor.visible = false;
-        usingController = true;
-        if(gameObject.GetComponent<PlayerInput>().currentControlScheme == KEYBOARDSCHEME)
-        {
-            
-        }
         upgradeManager = FindFirstObjectByType<UpgradeManager>();
         if (upgradeManager != null)
         {
@@ -158,26 +143,26 @@ public class PlayerController : MonoBehaviour
         }
         firstSceneLoaded = true;
 
-        //controls = new ControllerInput();
+        controls = new ControllerInput();
 
-        //controls.Player.Move.performed += ctx => move = ctx.ReadValue<Vector2>();
-        //controls.Player.Move.canceled += ctx => move = Vector2.zero;
+        controls.Player.Move.performed += ctx => move = ctx.ReadValue<Vector2>();
+        controls.Player.Move.canceled += ctx => move = Vector2.zero;
 
-        //controls.Player.Look.performed += ctx => cursorMove = ctx.ReadValue<Vector2>();
-        //controls.Player.Look.canceled += ctx => cursorMove = Vector2.zero;
+        controls.Player.Look.performed += ctx => cursorMove = ctx.ReadValue<Vector2>();
+        controls.Player.Look.canceled += ctx => cursorMove = Vector2.zero;
 
-       // controls.Player.Shoot.started += ctx =>
-       // {
-      //      triggerPressed = true;
-      //  };
-     //   controls.Player.Shoot.performed += ctx =>
-      //  {
-       //     triggerHeld = true;
-      //  };
-    //    controls.Player.Shoot.canceled += ctx =>
-     //   {
-     //       triggerHeld = false;
-     //   };
+        controls.Player.Shoot.started += ctx =>
+        {
+            triggerPressed = true;
+        };
+        controls.Player.Shoot.performed += ctx =>
+        {
+            triggerHeld = true;
+        };
+        controls.Player.Shoot.canceled += ctx =>
+        {
+            triggerHeld = false;
+        };
     }
     private void Start()
     {
@@ -312,7 +297,7 @@ public class PlayerController : MonoBehaviour
 
         if(playerDead == true)
         {
-            //ControllerCursorPos(false);
+            ControllerCursorPos(false);
             if (usingController == false)
             {
                 PlayerKeyboardMovement(false);
@@ -327,7 +312,7 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            ControllerCursorPos();
+            ControllerCursorPos(true);
             if (usingController == false)
             {
                 PlayerKeyboardMovement(true);
@@ -345,7 +330,9 @@ public class PlayerController : MonoBehaviour
 
         isPlayerInFog();
 
-    
+        
+
+        Debug.Log(movementSpeed);
         
     }
 
@@ -421,7 +408,7 @@ public class PlayerController : MonoBehaviour
     {
         if (shouldMove)
         {
-            Vector2 m = new Vector2(lastLeftInput.x, lastLeftInput.y);
+            Vector2 m = new Vector2(move.x, move.y);
             
             float angle = Mathf.Atan(m.y / m.x) * Mathf.Rad2Deg;
             if(float.IsNaN(angle))
@@ -500,74 +487,35 @@ public class PlayerController : MonoBehaviour
             }
             else
             {
-                // if (usingSemi)
-                // {
-                //     if (triggerPressed == true && canSemiShoot)
-                //     {
-                //         shootCurrentWeapon[currentWeapon] = true;
-                //         triggerPressed = false;
-                //     }
-                // }
-                // else if (usingAuto)
-                // {
-                //     if (triggerHeld == true)
-                //     {
-                //         shootCurrentWeapon[currentWeapon] = true;
-                //     }
-                //     if (triggerHeld == false)
-                //     {
-                //         shootCurrentWeapon[currentWeapon] = false;
-                //     }
-                // }
-                // else
-                // {
-                //     if (triggerPressed == true && canShotgunShoot)
-                //     {
-                //         shootCurrentWeapon[currentWeapon] = true;
-                //         triggerPressed = false;
-                //     }
-                // }
+                if (usingSemi)
+                {
+                    if (triggerPressed == true && canSemiShoot)
+                    {
+                        shootCurrentWeapon[currentWeapon] = true;
+                        triggerPressed = false;
+                    }
+                }
+                else if (usingAuto)
+                {
+                    if (triggerHeld == true)
+                    {
+                        shootCurrentWeapon[currentWeapon] = true;
+                    }
+                    if (triggerHeld == false)
+                    {
+                        shootCurrentWeapon[currentWeapon] = false;
+                    }
+                }
+                else
+                {
+                    if (triggerPressed == true && canShotgunShoot)
+                    {
+                        shootCurrentWeapon[currentWeapon] = true;
+                        triggerPressed = false;
+                    }
+                }
             }
         }       
-    }
-
-    private void OnShoot(InputValue value)
-    {
-        Debug.Log(value.isPressed);
-        if(value.isPressed == false)
-        {
-            shootCurrentWeapon[currentWeapon] = false;
-            return;
-        }
-        
-        if (usingSemi)
-        {
-            if (canSemiShoot)
-            {
-                shootCurrentWeapon[currentWeapon] = true;
-            }
-        }
-        else if (usingAuto)
-        {
-            shootCurrentWeapon[currentWeapon] = true;
-        }
-        else
-        {
-            if (canShotgunShoot)
-            {
-                shootCurrentWeapon[currentWeapon] = true;
-            }
-        }
-    }
-
-    private void OnLook(InputValue value)
-    {
-        lastRightInput = value.Get<Vector2>();
-    }
-
-    private void OnMove(InputValue value)
-    {
-        lastLeftInput = value.Get<Vector2>();
     }
 
     private void ControlWeapon()
@@ -666,22 +614,22 @@ public class PlayerController : MonoBehaviour
     {
         float rotationAngleRad;
         float rotationAngleDeg;
-        //if(usingController == false)
-       // {
-            // rotationAngleRad = Mathf.Atan(MousePosition().y / MousePosition().x);
-            // rotationAngleDeg = Mathf.Rad2Deg * rotationAngleRad;
+        if(usingController == false)
+        {
+            rotationAngleRad = Mathf.Atan(MousePosition().y / MousePosition().x);
+            rotationAngleDeg = Mathf.Rad2Deg * rotationAngleRad;
 
-            // if (MousePosition().x < 0) rotationAngleDeg += 90;
-            // else rotationAngleDeg -= 90;
-      //  }
-      //  else
-      //  {
+            if (MousePosition().x < 0) rotationAngleDeg += 90;
+            else rotationAngleDeg -= 90;
+        }
+        else
+        {
             rotationAngleRad = Mathf.Atan(CursorPositionController(cursorImageTransform).y / CursorPositionController(cursorImageTransform).x);
             rotationAngleDeg = Mathf.Rad2Deg * rotationAngleRad;
 
             if (CursorPositionController(cursorImageTransform).x < 0) rotationAngleDeg += 90;
             else rotationAngleDeg -= 90;
-        //}
+        }
 
         return rotationAngleDeg;
     }
@@ -696,11 +644,11 @@ public class PlayerController : MonoBehaviour
         Vector2 mousePosition = mousePositionInput - playerScreen;
         return mousePosition;
     }
-    private void ControllerCursorPos()
+    private void ControllerCursorPos(bool shouldMove)
     {
-        if(gameObject.GetComponent<PlayerInput>().currentControlScheme.Equals(CONTROLLERSCHEME))
+        if(shouldMove == true)
         {
-            cursorImageTransform.position += new Vector3(lastRightInput.x, lastRightInput.y, 0) * controllerSensitivity * Time.deltaTime;
+            cursorImageTransform.position += new Vector3(cursorMove.x, cursorMove.y, 0) * controllerSensitivity * Time.deltaTime;
 
             if (cursorImageTransform.anchoredPosition.x > 935)
             {
@@ -718,12 +666,6 @@ public class PlayerController : MonoBehaviour
             {
                 cursorImageTransform.anchoredPosition = new Vector3(cursorImageTransform.anchoredPosition.x, -515, cursorImageTransform.position.z);
             }
-        }
-        else
-        {
-            Vector2 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            cursorImageTransform.position = worldPosition;
-            
         }
         
     }
@@ -787,16 +729,13 @@ public class PlayerController : MonoBehaviour
     }
     private void isPlayerInFog()
     {
-        if(water != null) 
+        if(playerInFog == true)
         {
-            if(playerInFog == true)
-            {
-                water.playerInFog = true;
-            }
-            else
-            {
-                water.playerInFog = false;
-            }
+            water.playerInFog = true;
+        }
+        else
+        {
+            water.playerInFog = false;
         }
     }
 
@@ -810,12 +749,12 @@ public class PlayerController : MonoBehaviour
         return position;
     }
 
-    // private void OnEnable()
-    // {
-    //     controls.Player.Enable();
-    // }
-    // private void OnDisable()
-    // {
-    //     controls.Disable();
-    // }
+    private void OnEnable()
+    {
+        controls.Player.Enable();
+    }
+    private void OnDisable()
+    {
+        controls.Disable();
+    }
 }
