@@ -533,7 +533,6 @@ public class PlayerController : MonoBehaviour
 
     private void OnShoot(InputValue value)
     {
-        Debug.Log(value.isPressed);
         if(value.isPressed == false)
         {
             shootCurrentWeapon[currentWeapon] = false;
