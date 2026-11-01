@@ -446,6 +446,7 @@ public class PlayerController : MonoBehaviour
                 transform.rotation = Quaternion.Euler(0, 0, angle);
                 Vector3 moveToward = new Vector3(Mathf.Cos((angle + 90) * Mathf.Deg2Rad), Mathf.Sin((angle + 90) * Mathf.Deg2Rad), 0);
                 transform.position += moveToward * movementSpeed * Time.deltaTime;
+                
             }
         }
     }
@@ -714,7 +715,6 @@ public class PlayerController : MonoBehaviour
             Vector2 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             //cursorImageTransform.position = new Vector3(worldPosition.x, worldPosition.y, cursorImageTransform.position.z);
             cursorImageTransform.position = Input.mousePosition;
-            Debug.Log("Keyboparding");
             
         }
         
