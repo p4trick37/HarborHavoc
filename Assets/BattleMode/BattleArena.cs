@@ -101,9 +101,11 @@ namespace HarborBattle
                 pickup.ResetPickup();
                 pickups.Add(pickup);
             }
+            // Players chosen on the start screen skip the in-arena lobby.
+            if (BattleLobby.HasPlayers) SpawnLobbyPlayers();
             // Show the actual players immediately for keyboard testing, rather than
             // presenting an arena containing only treasure-chest pickups.
-            if (Gamepad.all.Count==0 && Keyboard.current!=null)
+            else if (Gamepad.all.Count==0 && Keyboard.current!=null)
             {
                 pads.Add(null); SpawnBoat(null,0);
                 pads.Add(null); SpawnBoat(null,1);
@@ -269,6 +271,16 @@ namespace HarborBattle
                     if (BattleInput.Pressed(lobbyInputs[pad],"Battle/StartMatch")) { Restart(); break; }
         }
 
+        private void SpawnLobbyPlayers()
+        {
+            foreach(var pad in BattleLobby.Players)
+            {
+                if(pad!=null && !pad.added) continue;
+                pads.Add(pad); SpawnBoat(pad,pads.Count-1);
+            }
+            BeginMatch(pads.Count==1);
+        }
+
         private void BeginMatch(bool forceSolo)
         {
             if(pads.Count==0 || (pads.Count<2 && !forceSolo)) return;
@@ -377,6 +389,8 @@ namespace HarborBattle
             foreach (var shot in FindObjectsByType<BattleShot>(FindObjectsSortMode.None)) Destroy(shot.gameObject);
             Boats.Clear(); pads.Clear(); result=null; Running=false; countingDown=false; soloTest=false;
             foreach (var pickup in pickups) pickup.ResetPickup();
+            // Start-screen matches rematch with the same players instead of reopening the lobby.
+            if (BattleLobby.HasPlayers) SpawnLobbyPlayers();
         }
 
         private void OnGUI()

@@ -350,7 +350,7 @@ public class PlayerController : MonoBehaviour
         isPlayerInFog();
 
     
-        
+        //Debug.Log(gameObject.GetComponent<PlayerInput>().currentControlScheme);
     }
 
     private void FixedUpdate()
@@ -446,6 +446,7 @@ public class PlayerController : MonoBehaviour
                 transform.rotation = Quaternion.Euler(0, 0, angle);
                 Vector3 moveToward = new Vector3(Mathf.Cos((angle + 90) * Mathf.Deg2Rad), Mathf.Sin((angle + 90) * Mathf.Deg2Rad), 0);
                 transform.position += moveToward * movementSpeed * Time.deltaTime;
+                
             }
         }
     }
@@ -504,33 +505,7 @@ public class PlayerController : MonoBehaviour
             }
             else
             {
-                // if (usingSemi)
-                // {
-                //     if (triggerPressed == true && canSemiShoot)
-                //     {
-                //         shootCurrentWeapon[currentWeapon] = true;
-                //         triggerPressed = false;
-                //     }
-                // }
-                // else if (usingAuto)
-                // {
-                //     if (triggerHeld == true)
-                //     {
-                //         shootCurrentWeapon[currentWeapon] = true;
-                //     }
-                //     if (triggerHeld == false)
-                //     {
-                //         shootCurrentWeapon[currentWeapon] = false;
-                //     }
-                // }
-                // else
-                // {
-                //     if (triggerPressed == true && canShotgunShoot)
-                //     {
-                //         shootCurrentWeapon[currentWeapon] = true;
-                //         triggerPressed = false;
-                //     }
-                // }
+
             }
         }       
     }
@@ -561,6 +536,7 @@ public class PlayerController : MonoBehaviour
                 shootCurrentWeapon[currentWeapon] = true;
             }
         }
+        
     }
 
     private void OnLook(InputValue value)
@@ -587,6 +563,18 @@ public class PlayerController : MonoBehaviour
             usingSemi = true;
             usingShotgun = false;
         }
+    }
+
+    private void SwitchControlSchemes()
+    {
+        // if()
+        // {
+        //    gameObject.GetComponent<PlayerInput>().SwitchCurrentControlScheme(CONTROLLERSCHEME); 
+        // }
+        // else 
+        // {
+        //     gameObject.GetComponent<PlayerInput>().SwitchCurrentControlScheme(KEYBOARDSCHEME);    
+        // }
     }
 
 
@@ -705,22 +693,22 @@ public class PlayerController : MonoBehaviour
         {
             cursorImageTransform.position += new Vector3(lastRightInput.x, lastRightInput.y, 0) * controllerSensitivity * Time.deltaTime;
 
-            // if (cursorImageTransform.anchoredPosition.x > 935)
-            // {
-            //     cursorImageTransform.anchoredPosition = new Vector3(935, cursorImageTransform.anchoredPosition.y, cursorImageTransform.position.z);
-            // }
-            // if (cursorImageTransform.anchoredPosition.x < -935)
-            // {
-            //     cursorImageTransform.anchoredPosition = new Vector3(-935, cursorImageTransform.anchoredPosition.y, cursorImageTransform.position.z);
-            // }
-            // if (cursorImageTransform.anchoredPosition.y > 515)
-            // {
-            //     cursorImageTransform.anchoredPosition = new Vector3(cursorImageTransform.anchoredPosition.x, 515, cursorImageTransform.position.z);
-            // }
-            // if (cursorImageTransform.anchoredPosition.y < -515)
-            // {
-            //     cursorImageTransform.anchoredPosition = new Vector3(cursorImageTransform.anchoredPosition.x, -515, cursorImageTransform.position.z);
-            // }
+            if (cursorImageTransform.anchoredPosition.x > 935)
+            {
+                cursorImageTransform.anchoredPosition = new Vector3(935, cursorImageTransform.anchoredPosition.y, cursorImageTransform.position.z);
+            }
+            if (cursorImageTransform.anchoredPosition.x < -935)
+            {
+                cursorImageTransform.anchoredPosition = new Vector3(-935, cursorImageTransform.anchoredPosition.y, cursorImageTransform.position.z);
+            }
+            if (cursorImageTransform.anchoredPosition.y > 515)
+            {
+                cursorImageTransform.anchoredPosition = new Vector3(cursorImageTransform.anchoredPosition.x, 515, cursorImageTransform.position.z);
+            }
+            if (cursorImageTransform.anchoredPosition.y < -515)
+            {
+                cursorImageTransform.anchoredPosition = new Vector3(cursorImageTransform.anchoredPosition.x, -515, cursorImageTransform.position.z);
+            }
         }
         else
         {
