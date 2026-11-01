@@ -27,18 +27,8 @@ public class UsersInputChoice : MonoBehaviour
 
     private void Start()
     {
-        if(chosenInput == true)
-        {
-            LoadStart();
-            Debug.Log("True");
-        }
-        else
-        {
-            keyboardButton.SetActive(true);
-            controllerButton.SetActive(true);
-            startButton.SetActive(false);
-            endButton.SetActive(false);
-        }
+        EventSystem.current.SetSelectedGameObject(null);
+        EventSystem.current.SetSelectedGameObject(startButton);
     }
 
     private void Update()
@@ -48,40 +38,15 @@ public class UsersInputChoice : MonoBehaviour
         AllowMouse();
     }
 
-    public void UseController()
-    {
-        PlayerController.usingController = true;
-        chosenInput = true;
-        Cursor.lockState = CursorLockMode.Locked;
-        LoadStart(); 
-    }
+    
 
-    public void UseKeyboard()
-    {
-        PlayerController.usingController = false;
-        chosenInput = true;
-        LoadStart();
-    }
-
-    private void LoadStart()
-    {
-        keyboardButton.SetActive(false);
-        controllerButton.SetActive(false);
-        startButton.SetActive(true);
-        endButton.SetActive(true);
-        if(PlayerController.usingController == true)
-        {
-            EventSystem.current.SetSelectedGameObject(null);
-            EventSystem.current.SetSelectedGameObject(startButton);
-        }
-    }
 
     private void AllowController()
     {
         if(move != Vector2.zero && chosenInput == false && mouseUsed == true)
         {
             EventSystem.current.SetSelectedGameObject(null);
-            EventSystem.current.SetSelectedGameObject(controllerButton);
+            EventSystem.current.SetSelectedGameObject(startButton);
             mouseUsed = false;
         }
     }
