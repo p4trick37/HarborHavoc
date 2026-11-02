@@ -330,7 +330,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 535e1b0235b14dc42bd6a47799747e4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HarborBattle.BattleArena
-  pickupCount: 10
+  fogMaterial: {fileID: 2100000, guid: 70e8a0889b12f5d41b85f8f99eac73bb, type: 2}
+  fogDamagePerSecond: 10
+  fogBoatOpacity: 0.55
+  cargoBoatPrefab: {fileID: 104, guid: 54f97fc5d52e4779a432e13ee54fdc40, type: 3}
+  cargoSpawnInterval: 5
+  maxCargoBoats: 4
+  lootLifetime: 20
   cameraPadding: 5
   freezeSeconds: 1
   slowSeconds: 3
@@ -396,7 +402,6 @@ MonoBehaviour:
     duration: 5
     color: {r: 0.6, g: 0.3, b: 1, a: 1}
     icon: {fileID: 0}
-  pickupRespawnSeconds: 10
 --- !u!4 &399302866
 Transform:
   m_ObjectHideFlags: 0
