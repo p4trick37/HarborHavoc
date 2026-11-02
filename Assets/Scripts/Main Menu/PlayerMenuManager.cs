@@ -19,6 +19,9 @@ public class PlayerMenuManager : MonoBehaviour
     private PlayerInputManager inputManager;
     private SceneSwitcherForMenus sceneSwitcher;
     private bool starting;
+    private ColorBlock startColors;
+    private bool startColorsSaved;
+    private bool startShownReady;
 
     private void Awake()
     {
@@ -45,7 +48,26 @@ public class PlayerMenuManager : MonoBehaviour
         bool ready = playersSelected.Count >= minPlayers && playersSelected.Count <= BattleLobby.MaxPlayers && starting == false;
         if (startButton != null)
         {
-            startButton.interactable = ready;
+            // The button stays interactable so a controller can still see it highlighted;
+            // it just looks greyed out and StartBattle does nothing until it's ready.
+            if (startColorsSaved == false)
+            {
+                startColors = startButton.colors;
+                startColorsSaved = true;
+                startButton.interactable = true;
+                startShownReady = !ready;
+            }
+            if (ready != startShownReady)
+            {
+                ColorBlock colors = startColors;
+                if (ready == false)
+                {
+                    colors.normalColor = startColors.disabledColor;
+                    colors.pressedColor = startColors.disabledColor;
+                }
+                startButton.colors = colors;
+                startShownReady = ready;
+            }
         }
         if (startButtonText != null)
         {
@@ -178,6 +200,32 @@ public class PlayerMenuManager : MonoBehaviour
             int currentPlayer = i + 1;
             string text = "P" + currentPlayer;
             playersSelected[i].SetText(text);
+        }
+        UpdateNavigation();
+    }
+
+    // Controller navigation: left/right moves between players' Leave buttons,
+    // down goes to Start, and up from Start goes back to the players.
+    private void UpdateNavigation()
+    {
+        for (int i = 0; i < playersSelected.Count; i++)
+        {
+            Button leave = playersSelected[i].LeaveButton;
+            if (leave == null) continue;
+            Navigation navigation = new Navigation();
+            navigation.mode = Navigation.Mode.Explicit;
+            navigation.selectOnLeft = i > 0 ? playersSelected[i - 1].LeaveButton : null;
+            navigation.selectOnRight = i < playersSelected.Count - 1 ? playersSelected[i + 1].LeaveButton : null;
+            navigation.selectOnDown = startButton;
+            leave.navigation = navigation;
+        }
+
+        if (startButton != null)
+        {
+            Navigation startNavigation = new Navigation();
+            startNavigation.mode = Navigation.Mode.Explicit;
+            startNavigation.selectOnUp = playersSelected.Count > 0 ? playersSelected[0].LeaveButton : null;
+            startButton.navigation = startNavigation;
         }
     }
 }

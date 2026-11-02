@@ -3,10 +3,9 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 public class UsersInputChoice : MonoBehaviour
 {
-    [SerializeField] private GameObject keyboardButton;
-    [SerializeField] private GameObject controllerButton;
-    [SerializeField] private GameObject startButton;
-    [SerializeField] private GameObject endButton;
+    [SerializeField] private GameObject campaignButton;
+    [SerializeField] private GameObject battleButton;
+    [SerializeField] private GameObject startBattleButton;
 
     private static bool chosenInput = false;
 
@@ -28,7 +27,7 @@ public class UsersInputChoice : MonoBehaviour
     private void Start()
     {
         EventSystem.current.SetSelectedGameObject(null);
-        EventSystem.current.SetSelectedGameObject(startButton);
+        EventSystem.current.SetSelectedGameObject(campaignButton);
     }
 
     private void Update()
@@ -36,6 +35,19 @@ public class UsersInputChoice : MonoBehaviour
         
         AllowController();
         AllowMouse();
+
+        if(mouseUsed == false && EventSystem.current.currentSelectedGameObject == null && startBattleButton.activeInHierarchy == true)
+        {
+            EventSystem.current.SetSelectedGameObject(startBattleButton);
+        }
+    }
+
+    public void Switch()
+    {
+        if(mouseUsed == false)
+        {
+            EventSystem.current.SetSelectedGameObject(startBattleButton);
+        }
     }
 
     
@@ -45,8 +57,16 @@ public class UsersInputChoice : MonoBehaviour
     {
         if(move != Vector2.zero && chosenInput == false && mouseUsed == true)
         {
-            EventSystem.current.SetSelectedGameObject(null);
-            EventSystem.current.SetSelectedGameObject(startButton);
+            if(campaignButton.activeInHierarchy == true)
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+                EventSystem.current.SetSelectedGameObject(campaignButton);
+            }
+            else
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+                EventSystem.current.SetSelectedGameObject(startBattleButton);
+            }
             mouseUsed = false;
         }
     }
@@ -61,6 +81,7 @@ public class UsersInputChoice : MonoBehaviour
         }
         lastMousePosition = mousePosition;
     }
+
     
 
     private void OnEnable()

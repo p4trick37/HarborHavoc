@@ -19,8 +19,11 @@ public class PlayerMenu : MonoBehaviour
     // The controller this player joined with, or null for keyboard & mouse.
     public Gamepad Gamepad => Device as Gamepad;
 
+    public Button LeaveButton { get; private set; }
+
     private void Awake()
     {
+        LeaveButton = GetComponentInChildren<Button>(true);
         playerManager = FindAnyObjectByType<PlayerMenuManager>();
         Transform canvasUI = GameObject.FindGameObjectWithTag("UI").transform;
         Transform menu = canvasUI.Find("PlayerSelect/Menu");
