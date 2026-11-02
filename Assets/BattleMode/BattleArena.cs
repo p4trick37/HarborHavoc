@@ -32,7 +32,15 @@ namespace HarborBattle
         public bool Running { get; private set; }
         public const float HalfWidth = 32f, HalfHeight = 18f;
         [Header("Arena and effects")]
-        [Min(1)] public int pickupCount=10;
+        [Header("Fixed fog boundary")]
+        public Material fogMaterial;
+        [Min(0)] public float fogDamagePerSecond=10;
+        [Range(0,1)] public float fogBoatOpacity=.55f;
+        [Header("Cargo traffic and dropped loot")]
+        public BattleAiBoat cargoBoatPrefab;
+        [Min(.1f)] public float cargoSpawnInterval=5;
+        [Min(0)] public int maxCargoBoats=4;
+        [Min(.1f)] public float lootLifetime=20;
         [Min(0)] public float cameraPadding=5;
         [Min(.1f)] public float freezeSeconds=1;
         [Min(.1f)] public float slowSeconds=3;
@@ -59,10 +67,11 @@ namespace HarborBattle
             new PickupOption(PowerUp.HomingMissile,5,new Color(.8f,.7f,.4f)),
             new PickupOption(PowerUp.SlowShot,5,new Color(.6f,.3f,1))
         };
-        [Min(0.1f)] public float pickupRespawnSeconds=10;
         private Camera arenaCamera;
         private readonly List<Gamepad> pads = new List<Gamepad>();
-        private readonly List<BattlePickup> pickups = new List<BattlePickup>();
+        public readonly List<BattleAiBoat> CargoBoats=new List<BattleAiBoat>();
+        private readonly Transform[] fogBands=new Transform[4];
+        private float cargoTimer;
         private string result;
         private float countdown;
         private bool countingDown;
@@ -83,23 +92,19 @@ namespace HarborBattle
             cam.orthographic = true;
             cam.backgroundColor = new Color(.025f,.15f,.22f);
             cam.clearFlags = CameraClearFlags.SolidColor;
-            Wall(new Vector2(0,HalfHeight+.5f),new Vector2(HalfWidth*2+2,1));
-            Wall(new Vector2(0,-HalfHeight-.5f),new Vector2(HalfWidth*2+2,1));
-            Wall(new Vector2(HalfWidth+.5f,0),new Vector2(1,HalfHeight*2));
-            Wall(new Vector2(-HalfWidth-.5f,0),new Vector2(1,HalfHeight*2));
+            for(int i=0;i<fogBands.Length;i++)
+            {
+                var band=Visual("Fog Border",Vector2.zero,Vector2.one,new Color(.8f,.85f,.9f,.8f));
+                var renderer=band.GetComponentInChildren<SpriteRenderer>();
+                if(fogMaterial!=null) renderer.sharedMaterial=fogMaterial;
+                renderer.sortingOrder=-2;
+                band.transform.SetParent(transform,true);
+                fogBands[i]=band.transform;
+            }
             if (GameObject.Find("Arena Islands") == null && GameObject.Find("Arena Island") == null)
             {
                 Island(new Vector2(0,7.6f));
                 Island(new Vector2(0,-7.6f));
-            }
-            for (int i=0;i<pickupCount;i++)
-            {
-                var item = Visual("Mystery Pickup",Vector2.zero,Vector2.one*.85f,Color.white);
-                ApplyArt(item,pickupArt,1f,2);
-                item.AddComponent<BoxCollider2D>().isTrigger = true;
-                var pickup = item.AddComponent<BattlePickup>();
-                pickup.ResetPickup();
-                pickups.Add(pickup);
             }
             // Players chosen on the start screen skip the in-arena lobby.
             if (BattleLobby.HasPlayers) SpawnLobbyPlayers();
@@ -112,19 +117,63 @@ namespace HarborBattle
             }
         }
 
-        public Vector2 PickupPosition(BattlePickup self)
+        public bool IsInFog(Vector2 position) => FogExposure.Outside(position.x,position.y,HalfWidth,HalfHeight);
+
+        public BattlePickup DropLoot(Vector2 position)
         {
+            var option=RollPickup();
+            if(option==null) return null;
+            var item=Visual("Cargo Loot",position,Vector2.one,Color.white);
+            ApplyArt(item,pickupArt,1,2);
+            item.AddComponent<BoxCollider2D>().isTrigger=true;
+            var drop=item.AddComponent<BattlePickup>();
+            drop.Initialize(option,lootLifetime);
+            return drop;
+        }
+
+        public BattleAiBoat SpawnCargoBoat()
+        {
+            CargoBoats.RemoveAll(boat=>boat==null || !boat.Alive);
+            if(cargoBoatPrefab==null || CargoBoats.Count>=maxCargoBoats) return null;
             Physics2D.SyncTransforms();
-            for(int attempt=0;attempt<100;attempt++)
+            float viewX=arenaCamera.orthographicSize*arenaCamera.aspect;
+            var cameraPosition=arenaCamera.transform.position;
+            // Both endpoints are beyond the camera AND the fixed safe area.
+            float left=Mathf.Min(-HalfWidth-5,cameraPosition.x-viewX-5);
+            float right=Mathf.Max(HalfWidth+5,cameraPosition.x+viewX+5);
+            float bottom=Mathf.Min(-HalfHeight-5,cameraPosition.y-arenaCamera.orthographicSize-5);
+            float top=Mathf.Max(HalfHeight+5,cameraPosition.y+arenaCamera.orthographicSize+5);
+            for(int attempt=0;attempt<30;attempt++)
             {
-                var point=new Vector2(Random.Range(-HalfWidth+3,HalfWidth-3),Random.Range(-HalfHeight+3,HalfHeight-3));
-                if(Physics2D.OverlapCircle(point,1.5f)!=null) continue;
+                bool horizontal=Random.value>.5f;
+                Vector2 a,b,c,d;
+                if(horizontal)
+                {
+                    a=new Vector2(left,Random.Range(-HalfHeight*.7f,HalfHeight*.7f));
+                    d=new Vector2(right,Random.Range(-HalfHeight*.7f,HalfHeight*.7f));
+                    b=new Vector2(-HalfWidth*.4f,Random.Range(-HalfHeight*.9f,HalfHeight*.9f));
+                    c=new Vector2(HalfWidth*.4f,Random.Range(-HalfHeight*.9f,HalfHeight*.9f));
+                }
+                else
+                {
+                    a=new Vector2(Random.Range(-HalfWidth*.75f,HalfWidth*.75f),bottom);
+                    d=new Vector2(Random.Range(-HalfWidth*.75f,HalfWidth*.75f),top);
+                    b=new Vector2(Random.Range(-HalfWidth*.9f,HalfWidth*.9f),-HalfHeight*.4f);
+                    c=new Vector2(Random.Range(-HalfWidth*.9f,HalfWidth*.9f),HalfHeight*.4f);
+                }
+                if(Random.value>.5f) {var swap=a;a=d;d=swap;swap=b;b=c;c=swap;}
                 bool clear=true;
-                foreach(var pickup in pickups)
-                    if(pickup!=self && Vector2.Distance(point,pickup.transform.position)<4) { clear=false; break; }
-                if(clear) return point;
+                for(int i=0;i<=40 && clear;i++)
+                    foreach(var hit in Physics2D.OverlapCircleAll(BattleAiBoat.Point(a,b,c,d,i/40f),1.4f))
+                        if(!hit.isTrigger && hit.GetComponentInParent<BattleBoat>()==null && hit.GetComponentInParent<BattleAiBoat>()==null)
+                        { clear=false; break; }
+                if(!clear) continue;
+                var boat=Instantiate(cargoBoatPrefab,a,Quaternion.identity);
+                boat.SetRoute(a,b,c,d);
+                CargoBoats.Add(boat);
+                return boat;
             }
-            return self.transform.position;
+            return null;
         }
 
         private void LateUpdate()
@@ -144,6 +193,19 @@ namespace HarborBattle
             size*=1.15f;
             arenaCamera.orthographicSize=size>arenaCamera.orthographicSize ? size : Mathf.Lerp(arenaCamera.orthographicSize,size,Time.deltaTime*3);
             arenaCamera.transform.position=new Vector3(bounds.center.x,bounds.center.y,-10);
+            float halfViewX=arenaCamera.orthographicSize*arenaCamera.aspect;
+            float minX=Mathf.Min(-HalfWidth-20,bounds.center.x-halfViewX-20), maxX=Mathf.Max(HalfWidth+20,bounds.center.x+halfViewX+20);
+            float minY=Mathf.Min(-HalfHeight-20,bounds.center.y-arenaCamera.orthographicSize-20), maxY=Mathf.Max(HalfHeight+20,bounds.center.y+arenaCamera.orthographicSize+20);
+            FogBand(0,new Vector2((minX+maxX)/2,(HalfHeight+maxY)/2),new Vector2(maxX-minX,maxY-HalfHeight));
+            FogBand(1,new Vector2((minX+maxX)/2,(-HalfHeight+minY)/2),new Vector2(maxX-minX,-HalfHeight-minY));
+            FogBand(2,new Vector2((-HalfWidth+minX)/2,0),new Vector2(-HalfWidth-minX,HalfHeight*2));
+            FogBand(3,new Vector2((HalfWidth+maxX)/2,0),new Vector2(maxX-HalfWidth,HalfHeight*2));
+        }
+
+        private void FogBand(int index,Vector2 position,Vector2 size)
+        {
+            fogBands[index].position=position;
+            fogBands[index].GetChild(0).localScale=new Vector3(size.x,size.y,1);
         }
 
         public PickupOption RollPickup()
@@ -202,12 +264,6 @@ namespace HarborBattle
             return obj;
         }
 
-        private void Wall(Vector2 position, Vector2 size)
-        {
-            var obj = Visual("Breakwater",position,size,new Color(.35f,.4f,.32f));
-            obj.AddComponent<BoxCollider2D>().size = size;
-        }
-
         private void Update()
         {
             foreach(var pad in Gamepad.all)
@@ -256,6 +312,7 @@ namespace HarborBattle
             {
                 // A disconnected controller pauses the round rather than eliminating its player.
                 foreach (var pad in pads) if (pad!=null && !pad.added) return;
+                if((cargoTimer-=Time.deltaTime)<=0) {SpawnCargoBoat();cargoTimer=Mathf.Max(.1f,cargoSpawnInterval);}
                 int alive=0; BattleBoat survivor=null;
                 foreach (var boat in Boats)
                 {
@@ -285,6 +342,7 @@ namespace HarborBattle
         {
             if(pads.Count==0 || (pads.Count<2 && !forceSolo)) return;
             soloTest=forceSolo;
+            cargoTimer=Mathf.Max(.1f,cargoSpawnInterval);
             countdown=3;
             countingDown=true;
         }
@@ -387,8 +445,10 @@ namespace HarborBattle
             foreach(var effect in FindObjectsByType<BattleVfxLifetime>(FindObjectsSortMode.None)) Destroy(effect.gameObject);
             foreach (var boat in Boats) Destroy(boat.gameObject);
             foreach (var shot in FindObjectsByType<BattleShot>(FindObjectsSortMode.None)) Destroy(shot.gameObject);
+            foreach(var cargo in CargoBoats) if(cargo!=null) {cargo.gameObject.SetActive(false);Destroy(cargo.gameObject);}
+            CargoBoats.Clear();
+            foreach(var drop in FindObjectsByType<BattlePickup>(FindObjectsSortMode.None)) {drop.gameObject.SetActive(false);Destroy(drop.gameObject);}
             Boats.Clear(); pads.Clear(); result=null; Running=false; countingDown=false; soloTest=false;
-            foreach (var pickup in pickups) pickup.ResetPickup();
             // Start-screen matches rematch with the same players instead of reopening the lobby.
             if (BattleLobby.HasPlayers) SpawnLobbyPlayers();
         }
@@ -412,7 +472,7 @@ namespace HarborBattle
                 GUI.color=Color.white;
                 GUI.Box(new Rect(x,y,panelWidth,116),GUIContent.none);
                 var boat=Boats[i];
-                GUI.Label(new Rect(x+10,y+5,panelWidth-20,24),"P"+(i+1)+"  "+(boat.Alive ? "Hull: "+boat.Health+" / 100" : "ELIMINATED"));
+                GUI.Label(new Rect(x+10,y+5,panelWidth-20,24),"P"+(i+1)+"  "+(boat.Alive ? "Hull: "+boat.Health+" / 100"+(IsInFog(boat.transform.position) ? "  FOG!" : "") : "ELIMINATED"));
                 GUI.color=new Color(.08f,.1f,.12f);
                 GUI.DrawTexture(new Rect(x+10,y+32,panelWidth-20,14),Texture2D.whiteTexture);
                 GUI.color=colors[i];
@@ -446,7 +506,10 @@ namespace HarborBattle
         private float remaining => loadout.Remaining;
         private PickupOption primary => loadout.Ready;
         private PickupOption reserve => loadout.Reserve;
+        public PowerUp ReadyItem => primary==null ? PowerUp.None : primary.kind;
+        public PowerUp ReserveItem => reserve==null ? PowerUp.None : reserve.kind;
         private float cooldown, frozen, slowed, burning, burnTick, waveTimer;
+        private readonly FogExposure fog=new FogExposure();
         private Vector2 knockback;
         private GameObject shieldVisual;
         private GameObject burnVisual, freezeVisual, slowVisual, boostVisual;
@@ -502,6 +565,14 @@ namespace HarborBattle
             body.linearVelocity=Vector2.zero;
             if (!Alive || !BattleArena.Instance.CanSimulate) return;
             float dt=Time.fixedDeltaTime;
+            var arena=BattleArena.Instance;
+            bool inFog=arena.IsInFog(transform.position);
+            int fogDamage=fog.Tick(inFog,dt,arena.fogDamagePerSecond);
+            if(fogDamage>0) { Damage(fogDamage); if(!Alive) return; }
+            foreach(var sprite in GetComponentsInChildren<SpriteRenderer>())
+            {
+                var color=sprite.color; color.a=inFog ? arena.fogBoatOpacity : 1; sprite.color=color;
+            }
             if(activateRequested) { Activate(); activateRequested=false; }
             if(loadout.Tick(dt))
             {
@@ -551,6 +622,12 @@ namespace HarborBattle
                 Vector2 offset=target.transform.position-transform.position;
                 if(offset.magnitude<=radius) target.Hit(8,PowerUp.None,offset.normalized*12);
             }
+            foreach(var cargo in BattleArena.Instance.CargoBoats.ToArray())
+            {
+                if(cargo==null || !cargo.Alive) continue;
+                Vector2 offset=cargo.transform.position-transform.position;
+                if(offset.magnitude<=radius) cargo.Hit(8,PowerUp.None,offset.normalized*2);
+            }
             if(BattleVfx.Spawn(BattleArena.Instance.vfx?.shockwave,transform.position)!=null) return;
             var ring=new GameObject("Shockwave pulse").AddComponent<LineRenderer>();
             ring.useWorldSpace=true; ring.loop=true; ring.positionCount=48;
@@ -573,9 +650,10 @@ namespace HarborBattle
             Vector2 end=start+aim*40;
             foreach(var hit in Physics2D.RaycastAll(start,aim,40))
             {
-                if(hit.collider.isTrigger || hit.collider.GetComponent<BattleBoat>()==this) continue;
+                if(hit.collider.isTrigger || hit.collider.GetComponentInParent<BattleBoat>()==this) continue;
                 end=hit.point;
-                hit.collider.GetComponent<BattleBoat>()?.Damage(30);
+                hit.collider.GetComponentInParent<BattleBoat>()?.Damage(30);
+                hit.collider.GetComponentInParent<BattleAiBoat>()?.Hit(30,PowerUp.None,Vector2.zero);
                 BattleVfx.Spawn(visuals?.impact,end,null,false,aim);
                 break;
             }
@@ -592,19 +670,28 @@ namespace HarborBattle
 
     public class BattleShot : MonoBehaviour
     {
-        private BattleBoat owner;
+        private Transform owner;
+        private bool fromAi;
         private Vector2 direction;
         private int damage;
         private PowerUp effect;
         private float life=4;
-        private BattleBoat target;
+        private Transform target;
         private ShotVfx visuals;
         private Transform flightVisual;
         public static void Spawn(BattleBoat source,Vector2 direction,int damage,PowerUp effect=PowerUp.None)
         {
-            var obj=BattleArena.Visual("Cannon shot",(Vector2)source.transform.position+direction*1.1f,Vector2.one*.18f,Color.white);
+            SpawnShot(source.transform,direction,damage,effect,false);
+        }
+        public static void SpawnFromAi(BattleAiBoat source,Vector2 direction,int damage)
+        {
+            SpawnShot(source.transform,direction,damage,PowerUp.None,true);
+        }
+        private static void SpawnShot(Transform source,Vector2 direction,int damage,PowerUp effect,bool fromAi)
+        {
+            var obj=BattleArena.Visual("Cannon shot",(Vector2)source.position+direction*1.6f,Vector2.one*.18f,Color.white);
             BattleArena.ApplyArt(obj,BattleArena.Instance.shotArt,.25f,5);
-            var shot=obj.AddComponent<BattleShot>(); shot.owner=source; shot.direction=direction; shot.damage=damage; shot.effect=effect;
+            var shot=obj.AddComponent<BattleShot>(); shot.owner=source; shot.fromAi=fromAi; shot.direction=direction; shot.damage=damage; shot.effect=effect;
             shot.visuals=BattleArena.Instance.vfx?.Shot(effect);
             var flight=BattleVfx.Spawn(shot.visuals?.projectile,obj.transform.position,obj.transform,true,direction);
             if(flight!=null) { shot.flightVisual=flight.transform; obj.transform.Find("Visual").gameObject.SetActive(false); }
@@ -618,16 +705,20 @@ namespace HarborBattle
             if(!BattleArena.Instance.CanSimulate) return;
             if(effect==PowerUp.HomingMissile)
             {
-                if(target==null || !target.Alive)
+                if(!TargetAlive(target))
                 {
+                    target=null;
                     float closest=float.PositiveInfinity;
                     foreach(var boat in BattleArena.Instance.Boats)
-                        if(boat!=owner && boat.Alive && Vector2.Distance(transform.position,boat.transform.position)<closest)
-                        { target=boat; closest=Vector2.Distance(transform.position,boat.transform.position); }
+                        if(boat.transform!=owner && boat.Alive && Vector2.Distance(transform.position,boat.transform.position)<closest)
+                        { target=boat.transform; closest=Vector2.Distance(transform.position,boat.transform.position); }
+                    foreach(var cargo in BattleArena.Instance.CargoBoats)
+                        if(cargo!=null && cargo.Alive && Vector2.Distance(transform.position,cargo.transform.position)<closest)
+                        {target=cargo.transform;closest=Vector2.Distance(transform.position,cargo.transform.position);}
                 }
                 if(target!=null)
                 {
-                    Vector2 desired=(target.transform.position-transform.position).normalized;
+                    Vector2 desired=(target.position-transform.position).normalized;
                     float angle=Vector2.SignedAngle(direction,desired);
                     direction=Quaternion.Euler(0,0,Mathf.Clamp(angle,-75*Time.fixedDeltaTime,75*Time.fixedDeltaTime))*direction;
                 }
@@ -637,51 +728,56 @@ namespace HarborBattle
             var hits=Physics2D.CircleCastAll(transform.position,.09f,direction,distance);
             foreach(var hit in hits)
             {
-                if(hit.collider.isTrigger || hit.collider.GetComponent<BattleBoat>()==owner) continue;
-                hit.collider.GetComponent<BattleBoat>()?.Hit(damage,effect,Vector2.zero);
+                if(hit.collider.isTrigger || (owner!=null && hit.collider.transform.IsChildOf(owner))) continue;
+                var cargo=hit.collider.GetComponentInParent<BattleAiBoat>();
+                if(fromAi && cargo!=null) continue;
+                hit.collider.GetComponentInParent<BattleBoat>()?.Hit(damage,effect,Vector2.zero);
+                if(!fromAi) cargo?.Hit(damage,effect,Vector2.zero);
                 BattleVfx.Spawn(visuals?.impact,hit.point,null,false,direction);
                 Destroy(gameObject); return;
             }
             transform.position+=(Vector3)(direction*distance);
             if((life-=Time.fixedDeltaTime)<=0) Destroy(gameObject);
         }
+        private static bool TargetAlive(Transform candidate)
+        {
+            if(candidate==null) return false;
+            var player=candidate.GetComponent<BattleBoat>();
+            if(player!=null) return player.Alive;
+            var cargo=candidate.GetComponent<BattleAiBoat>();
+            return cargo!=null && cargo.Alive;
+        }
     }
 
+    // Loot has no owner: a physical collection decides who receives the item.
     public class BattlePickup : MonoBehaviour
     {
         private PickupOption option;
-        private float respawn;
-        public void ResetPickup()
+        private float remaining;
+        private bool claimed;
+        public void Initialize(PickupOption item,float lifetime)
         {
-            option=BattleArena.Instance.RollPickup();
-            transform.position=BattleArena.Instance.PickupPosition(this);
-            respawn=0;
-            var renderer=GetComponentInChildren<SpriteRenderer>();
-            GetComponent<Collider2D>().enabled=option!=null;
-            renderer.enabled=option!=null;
-            if(option==null) return;
-            BattleArena.ApplyArt(gameObject,BattleArena.Instance.pickupArt,1,2);
-            renderer.color=Color.white;
+            option=item;
+            remaining=Mathf.Max(.1f,lifetime);
         }
         private void Update()
         {
-            if(!BattleArena.Instance.CanSimulate || respawn<=0) return;
-            if((respawn-=Time.deltaTime)<=0) ResetPickup();
+            if(!BattleArena.Instance.CanSimulate || claimed) return;
+            if((remaining-=Time.deltaTime)<=0) {claimed=true;gameObject.SetActive(false);Destroy(gameObject);}
         }
         private void OnTriggerStay2D(Collider2D other)
         {
-            var boat=other.GetComponent<BattleBoat>();
-            if(respawn>0 || boat==null || !boat.Alive || !BattleArena.Instance.CanSimulate) return;
-            if(option==null) return;
-            var revealed=BattleArena.Instance.RollPickup();
-            if(revealed==null) return;
-            boat.Collect(revealed); respawn=BattleArena.Instance.pickupRespawnSeconds;
+            var boat=other.GetComponentInParent<BattleBoat>();
+            if(claimed || option==null || boat==null || !boat.Alive || !BattleArena.Instance.CanSimulate) return;
+            claimed=true;
             GetComponent<Collider2D>().enabled=false;
-            GetComponentInChildren<SpriteRenderer>().enabled=false;
+            boat.Collect(option);
+            gameObject.SetActive(false);
+            Destroy(gameObject);
         }
         private void OnGUI()
         {
-            if(option==null || respawn>0 || Camera.main==null) return;
+            if(claimed || option==null || Camera.main==null) return;
             var point=Camera.main.WorldToScreenPoint(transform.position);
             GUI.Label(new Rect(point.x-12,Screen.height-point.y-35,30,25),"?");
         }

@@ -17,3 +17,12 @@ slots.Tick(-10); Check(slots.Remaining==2,"Negative elapsed time must not extend
 Check(slots.Tick(2) && slots.Ready==null && slots.Active==null,"Custom duration and empty expiry must work");
 slots.Collect("Shotgun"); slots.TryActivate(_=>0); Check(slots.Remaining==.1f,"Invalid duration must be clamped");
 Console.WriteLine("PASS: reserve replacement, no combination, timed expiry, manual promotion, custom duration, duration guard.");
+Check(!FogExposure.Outside(32,18,32,18),"The safe boundary must remain safe");
+Check(FogExposure.Outside(32.1f,0,32,18) && FogExposure.Outside(0,-18.1f,32,18),"Fog must surround all sides");
+var fog=new FogExposure(); int total=0;
+for(int i=0;i<50;i++) total+=fog.Tick(true,.02f,10);
+Check(total==10,"One second in fog must deal exactly ten damage across physics ticks");
+fog.Tick(true,.05f,10); fog.Tick(false,.1f,10);
+Check(fog.Tick(true,.05f,10)==0,"Returning to safe water must reset partial exposure");
+Check(fog.Tick(true,0,10)==0,"Paused simulation must not add damage");
+Console.WriteLine("PASS: fog boundary, fractional damage, safe re-entry, pause.");

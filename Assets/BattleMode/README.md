@@ -12,9 +12,9 @@ The arena is 64 x 36, twice its previous width and height. The camera follows su
 
 ## Mystery pickups
 
-Ten mystery chests appear at random clear locations and relocate on respawn. Items reveal when collected. Collection fills primary, then reserve. When full, new collection replaces reserve. Press Activate to start primary; reserve cannot activate until it expires. After expiry, reserve moves to primary and waits for a fresh button press. Items last five seconds by default, even when not firing or boosting. No ammo/fuel consumption and no combined weapons.
+Power-ups only come from sinking cargo AI boats. Each destroyed boat drops one mystery chest at its location. Anyone can collect it, regardless of who sank the boat; nothing is automatically awarded to the killer. Unclaimed loot disappears after 20 seconds of active play. Escaped boats drop nothing. There are no ambient pickups or pickup respawns. Collection fills primary, then reserve; when full, a new item replaces reserve. Activate starts the primary for five seconds by default. Reserve waits until expiry and requires a fresh activation press. No combined weapons or ammo/fuel consumption.
 
-Select Battle Arena to edit Pickup Pool. Each entry exposes type, spawn weight, duration, color, and optional icon. Weight zero disables an entry; an empty pool hides pickups. New weapon behaviors require an enum entry and combat implementation. Mystery chests always hide their contents. Pickup Count, Respawn Seconds, camera padding, and status settings are adjustable.
+Select Battle Arena to edit Pickup Pool. Each entry exposes type, spawn weight, duration, color, and optional icon. Weight zero disables an entry; an empty pool hides pickups. New weapon behaviors require an enum entry and combat implementation. Mystery chests always hide their contents. Cargo spawn interval, alive cap, loot lifetime, fog damage, camera padding, and status settings are adjustable. A fully disabled pickup pool disables loot.
 
 Items: rapid fire; shotgun; laser; fast boat (hold Boost); shield (blocks damage/status/push); shockwave (damage and knockback pulse each second); freeze shot (movement freeze); fire shot (burn damage); slow homing missile (limited turn rate); slow shot (movement reduction). All share the same two inventory slots and one active effect.
 
@@ -37,3 +37,12 @@ Battle Arena now instantiates the full Assets/Prefabs/Player.prefab, including i
 Campaign PlayerController/PlayerHealth are disabled on battle instances. PlayerController's Awake exits before campaign setup when a BattleBoat is present. BattleBoat retains battle-specific movement, health, status effects and timed inventory; campaign instances keep their existing behavior. Cursor UI is hidden only on battle clones. The source prefab is not rewritten.
 
 Controller Start joins. Press Start again (or A) to start; with exactly one joined player this launches SOLO TEST, which does not auto-win. With multiple players, last boat alive wins. Enter in a one-controller lobby adds a keyboard opponent, using WASD/mouse/E; in a keyboard-only match the second keyboard player uses arrows/Right Ctrl/Enter. B/Esc returns to lobby. The menu Battle Mode > Validate Merged Input checks the prefab mapping. In Play Mode, Battle Mode > Test Controller Lobby In Play Mode uses a temporary virtual controller to verify full prefab spawning, pairing, join/start, movement, shooting, and solo mode. The smoke test resets only the running match, then removes the test controller.
+
+
+## Fog and cargo traffic
+
+The solid walls are removed. The safe play area stays fixed at 64 x 36; crossing any edge enters passable fog that deals 10 hull damage per second. The border uses the campaign fog material. Returning to safe water stops damage; shields retain their damage protection. Damage, cargo movement/spawning, and loot timers pause when gameplay pauses.
+
+Select Battle Arena to edit Cargo Spawn Interval (5 seconds), Max Cargo Boats (4), Loot Lifetime (20 seconds), Fog Damage Per Second (10), and fog opacity. Select Assets/BattleMode/CargoBoat.prefab to edit Max Health (30), Speed (5), and Can Shoot (off by default). Optional shooting targets nearby players and exposes range, interval, and damage. Cargo is excluded from victory and spawns during solo testing too.
+
+Boats enter beyond the camera and safe area, follow randomized cubic curves through the arena, and despawn at the far off-screen endpoint. Routes are sampled to avoid islands. Cargo accepts regular projectiles, lasers, homing missiles, shockwaves, freeze, fire and slow effects. Boat deaths reuse the configured explosion VFX. The dedicated prefab uses the existing boat/cannon artwork; swap its renderers to change the cargo skin.

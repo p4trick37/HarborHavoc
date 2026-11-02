@@ -24,6 +24,8 @@ namespace HarborBattle.Editor
             camera.clearFlags=CameraClearFlags.SolidColor;
             camera.backgroundColor=new Color(.025f,.15f,.22f);
             var manager=new GameObject("Battle Arena").AddComponent<BattleArena>();
+            manager.fogMaterial=AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Boarder/New Material.mat");
+            manager.cargoBoatPrefab=AssetDatabase.LoadAssetAtPath<BattleAiBoat>("Assets/BattleMode/CargoBoat.prefab");
             manager.vfx=AssetDatabase.LoadAssetAtPath<BattleVfxProfile>("Assets/BattleMode/BattleVfx.asset");
             manager.boatArt=Art("Assets/Art/ship 1.png");
             manager.originalPlayerPrefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player.prefab");
