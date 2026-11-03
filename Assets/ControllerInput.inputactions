@@ -239,6 +239,15 @@
               "processors": "",
               "interactions": "",
               "initialStateCheck": false
+            },
+            {
+              "name": "ActivateDefense",
+              "type": "Button",
+              "id": "436c9585-e44f-454f-abc8-46fddf2a2e9e",
+              "expectedControlType": "Button",
+              "processors": "",
+              "interactions": "",
+              "initialStateCheck": false
             }
           ],
           "bindings": [
@@ -349,6 +358,28 @@
               "processors": "",
               "groups": "Keyboard",
               "action": "Activate",
+              "isComposite": false,
+              "isPartOfComposite": false
+            },
+            {
+              "name": "",
+              "id": "a0a85b3f-a077-460a-ae0d-cf4e9fe902ed",
+              "path": "<Gamepad>/leftTrigger",
+              "interactions": "",
+              "processors": "",
+              "groups": "Controller",
+              "action": "ActivateDefense",
+              "isComposite": false,
+              "isPartOfComposite": false
+            },
+            {
+              "name": "",
+              "id": "e1c59aa6-4bfe-4ea4-b5ff-027f903418fe",
+              "path": "<Keyboard>/leftShift",
+              "interactions": "",
+              "processors": "",
+              "groups": "Keyboard",
+              "action": "ActivateDefense",
               "isComposite": false,
               "isPartOfComposite": false
             }

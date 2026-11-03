@@ -35,7 +35,8 @@ namespace HarborBattle
                 Aim=actions.FindAction("Player/Look",false)?.ReadValue<Vector2>() ?? Vector2.zero,
                 Fire=actions.FindAction("Player/Shoot",false)?.IsPressed()==true,
                 Boost=actions.FindAction("Battle/Boost",false)?.IsPressed()==true,
-                Activate=Pressed(actions,"Battle/Activate")
+                Activate=Pressed(actions,"Battle/Activate"),
+                ActivateDefense=Pressed(actions,"Battle/ActivateDefense")
             };
         }
     }

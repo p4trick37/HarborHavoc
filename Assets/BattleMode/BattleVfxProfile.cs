@@ -36,6 +36,8 @@ namespace HarborBattle
         public VfxVisual boost=new VfxVisual();
         public VfxVisual shockwave=new VfxVisual();
         public VfxVisual boatExplosion=new VfxVisual();
+        public VfxVisual smoke=new VfxVisual();
+        public VfxVisual bubbles=new VfxVisual();
         public ShotVfx Shot(PowerUp kind)
         {
             ShotVfx fallback=null;
