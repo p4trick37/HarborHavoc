@@ -26,6 +26,8 @@ namespace HarborBattle.Editor
             var manager=new GameObject("Battle Arena").AddComponent<BattleArena>();
             manager.fogMaterial=AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Boarder/New Material.mat");
             manager.cargoBoatPrefab=AssetDatabase.LoadAssetAtPath<BattleAiBoat>("Assets/BattleMode/CargoBoat.prefab");
+            manager.offensiveCargoPrefab=AssetDatabase.LoadAssetAtPath<BattleAiBoat>("Assets/BattleMode/OffensiveCargoBoat.prefab");
+            manager.defensiveCargoPrefab=AssetDatabase.LoadAssetAtPath<BattleAiBoat>("Assets/BattleMode/DefensiveCargoBoat.prefab");
             manager.vfx=AssetDatabase.LoadAssetAtPath<BattleVfxProfile>("Assets/BattleMode/BattleVfx.asset");
             manager.boatArt=Art("Assets/Art/ship 1.png");
             manager.originalPlayerPrefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player.prefab");

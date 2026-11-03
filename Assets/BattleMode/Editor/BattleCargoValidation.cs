@@ -63,13 +63,13 @@ namespace HarborBattle.Editor
                     case 5:
                         Check(arena.Boats[0].Health==health,"Fog damage must stop in safe water.");
                         cargo=arena.SpawnCargoBoat();
-                        Check(cargo!=null && cargo.Health==30 && !cargo.canShoot,"Cargo defaults must be 30 health and shooting off.");
+                        Check(cargo!=null && cargo.Health==cargo.maxHealth,"Cargo must use its category prefab health.");
                         var screen=Camera.main.WorldToViewportPoint(cargo.transform.position);
                         Check(screen.x<0 || screen.x>1 || screen.y<0 || screen.y>1,"Cargo must enter from off-screen.");
                         cargo.speed=0;
                         cargo.SetRoute(new Vector2(-4,-10),new Vector2(-3,-10),new Vector2(-2,-10),new Vector2(-1,-10));
                         Physics2D.SyncTransforms();
-                        for(int i=0;i<3;i++) BattleShot.Spawn(arena.Boats[0],Vector2.right,10);
+                        for(int i=0;i<Mathf.CeilToInt(cargo.Health/10f);i++) BattleShot.Spawn(arena.Boats[0],Vector2.right,10);
                         Wait(.5); break;
                     case 6:
                         Check(cargo==null || !cargo.Alive,"Player projectiles must sink cargo boats.");

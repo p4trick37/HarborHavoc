@@ -137,6 +137,22 @@ MonoBehaviour:
       scale: 0.5
       rotation: {x: 0, y: 0, z: 0}
       lifetime: 3
+  - kind: 11
+    projectile:
+      prefab: {fileID: 5912344974454636654, guid: 83f8c9cbe221fca4eaae68c50efd83d3, type: 3}
+      scale: 0.45
+      rotation: {x: 0, y: 0, z: 0}
+      lifetime: 3
+    muzzle:
+      prefab: {fileID: 4186470608034871016, guid: 4b3c47f667684e5418d849f7f3f4d9c4, type: 3}
+      scale: 0.35
+      rotation: {x: 0, y: 0, z: 0}
+      lifetime: 3
+    impact:
+      prefab: {fileID: 4186470608034871016, guid: 519bfaf22a8bc4341862dfa0f6f89c3c, type: 3}
+      scale: 0.5
+      rotation: {x: 0, y: 0, z: 0}
+      lifetime: 3
   burning:
     prefab: {fileID: 8172849020266659018, guid: 2af5562ce69fc2d448481a1587a352a5, type: 3}
     scale: 0.35
@@ -172,3 +188,14 @@ MonoBehaviour:
     scale: 0.8
     rotation: {x: -90, y: 0, z: 0}
     lifetime: 3
+
+  smoke:
+    prefab: {fileID: 6017939430812485020, guid: 402ac84174b107c43b6603ad54e752f7, type: 3}
+    scale: 3
+    rotation: {x: -90, y: 0, z: 0}
+    lifetime: 5
+  bubbles:
+    prefab: {fileID: 6339125772217162443, guid: 019cb9075f201514cbc67c9694ce7f77, type: 3}
+    scale: 0.3
+    rotation: {x: -90, y: 0, z: 0}
+    lifetime: 0.3
