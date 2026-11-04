@@ -330,6 +330,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 535e1b0235b14dc42bd6a47799747e4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HarborBattle.BattleArena
+  audioProfile: {fileID: 11400000, guid: e5eb5e5ca3414c8bb3474df6b709ce80, type: 2}
   fogMaterial: {fileID: 2100000, guid: 70e8a0889b12f5d41b85f8f99eac73bb, type: 2}
   fogDamagePerSecond: 10
   fogBoatOpacity: 0.55
@@ -366,6 +367,7 @@ MonoBehaviour:
   originalPlayerPrefab: {fileID: 473378636629930842, guid: 682165561cd68334db40c6b988220a6b, type: 3}
   crosshairArt: {fileID: -6142374563283994760, guid: 7f97f7ed8c4e6f8408af6deda087383d, type: 3}
   menuFont: {fileID: 11400000, guid: 22c3315eec03f5741ba7520435e1edd6, type: 2}
+  hudFont: {fileID: 12800000, guid: c0b06f446810b424eab317d1a8c4dc0b, type: 3}
   vfx: {fileID: 11400000, guid: 83f68de8837349209dc35705f97ea810, type: 2}
   pickupPool:
   - kind: 1
