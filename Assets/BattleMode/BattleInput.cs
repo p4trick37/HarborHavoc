@@ -36,6 +36,7 @@ namespace HarborBattle
                 Fire=actions.FindAction("Player/Shoot",false)?.IsPressed()==true,
                 Boost=actions.FindAction("Battle/Boost",false)?.IsPressed()==true,
                 Activate=Pressed(actions,"Battle/Activate"),
+                ActivateDefense=Pressed(actions,"Battle/ActivateDefense"),
                 Mine=Pressed(actions,"Battle/Mine")
             };
         }

@@ -6,15 +6,18 @@ namespace HarborBattle
     public sealed class TimedLoadout<T> where T : class
     {
         public T Ready { get; private set; }
-        public T Reserve { get; private set; }
         public T Active { get; private set; }
         public float Remaining { get; private set; }
+        public void Clear() {Ready=null;Active=null;Remaining=0;}
 
         public void Collect(T item)
         {
             if(item==null) return;
-            if(Ready==null && Active==null) Ready=item;
-            else Reserve=item;
+            // Exactly one item per category, including an item currently running.
+            // A pickup replaces/cancels that item and waits for a new activation.
+            Ready=item;
+            Active=null;
+            Remaining=0;
         }
 
         public bool TryActivate(Func<T,float> duration)
@@ -32,8 +35,6 @@ namespace HarborBattle
             Remaining=Math.Max(0,Remaining-Math.Max(0,seconds));
             if(Remaining>0) return false;
             Active=null;
-            Ready=Reserve;
-            Reserve=null;
             return true;
         }
     }

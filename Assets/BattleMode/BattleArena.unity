@@ -334,6 +334,19 @@ MonoBehaviour:
   fogDamagePerSecond: 10
   fogBoatOpacity: 0.55
   cargoBoatPrefab: {fileID: 104, guid: 54f97fc5d52e4779a432e13ee54fdc40, type: 3}
+  offensiveCargoPrefab: {fileID: 104, guid: 0cc4cc20c0b2413391df04bb534ce627, type: 3}
+  defensiveCargoPrefab: {fileID: 104, guid: 814b4e7587d84c04b89d69f71f51af2c, type: 3}
+  offensiveCargoChance: 0.5
+  laserRange: 40
+  shotgun360Pellets: 16
+  shotgun360Cooldown: 0.8
+  shotgun360Damage: 8
+  starSpeedMultiplier: 1.2
+  fastBoatSpeedMultiplier: 2
+  smokeRadius: 5
+  bubbleInterval: 1.2
+  bubbleVisibleSeconds: 0.3
+  pickupPopupSeconds: 2
   cargoSpawnInterval: 5
   maxCargoBoats: 4
   lootLifetime: 20
@@ -402,6 +415,26 @@ MonoBehaviour:
     weight: 1
     duration: 5
     color: {r: 0.6, g: 0.3, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 11
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 12
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 13
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
+    icon: {fileID: 0}
+  - kind: 14
+    weight: 1
+    duration: 5
+    color: {r: 1, g: 1, b: 1, a: 1}
     icon: {fileID: 0}
 --- !u!4 &399302866
 Transform:

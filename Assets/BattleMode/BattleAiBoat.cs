@@ -6,6 +6,7 @@ namespace HarborBattle
     public class BattleAiBoat : MonoBehaviour
     {
         [Header("Cargo boat")]
+        public ItemCategory category;
         [Min(1)] public int maxHealth=30;
         [Min(.1f)] public float speed=5;
         [Header("Optional combat (off for cargo traffic)")]
@@ -54,7 +55,7 @@ namespace HarborBattle
             {
                 finished=true;
                 GetComponent<Collider2D>().enabled=false;
-                BattleArena.Instance.DropLoot(transform.position);
+                BattleArena.Instance.DropLoot(transform.position,category);
                 BattleVfx.Spawn(BattleArena.Instance.vfx?.boatExplosion,transform.position);
                 gameObject.SetActive(false);
                 Destroy(gameObject);
@@ -97,7 +98,7 @@ namespace HarborBattle
             foreach(var player in arena.Boats)
             {
                 float distance=Vector2.Distance(transform.position,player.transform.position);
-                if(player.Alive && distance<closest) {closest=distance;target=player;}
+                if(player.CanBeTargeted && distance<closest) {closest=distance;target=player;}
             }
             fireTimer-=dt;
             if(target==null) return;
@@ -105,6 +106,8 @@ namespace HarborBattle
             if(turret!=null) turret.rotation=Quaternion.Euler(0,0,Mathf.Atan2(aim.y,aim.x)*Mathf.Rad2Deg-90);
             if(fireTimer<=0) { BattleShot.SpawnFromAi(this,aim,shotDamage); fireTimer=shotInterval; }
         }
+
+        private void LateUpdate() => BattleVisibility.Apply(transform,BattleSmoke.Contains(transform.position));
 
         private void Status(ref GameObject instance,bool active,VfxVisual visual)
         {

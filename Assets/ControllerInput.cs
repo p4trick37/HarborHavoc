@@ -327,9 +327,9 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Mine"",
+                    ""name"": ""ActivateDefense"",
                     ""type"": ""Button"",
-                    ""id"": ""8d2f6c1e-4b7a-4e39-9a51-3c0e7f2b6d84"",
+                    ""id"": ""436c9585-e44f-454f-abc8-46fddf2a2e9e"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """",
@@ -449,23 +449,23 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""e47a1b93-25c6-4d0f-8b3e-6a9d1f05c2b7"",
-                    ""path"": ""<Gamepad>/rightShoulder"",
+                    ""id"": ""a0a85b3f-a077-460a-ae0d-cf4e9fe902ed"",
+                    ""path"": ""<Gamepad>/leftTrigger"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Controller"",
-                    ""action"": ""Mine"",
+                    ""action"": ""ActivateDefense"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
                 {
                     ""name"": """",
-                    ""id"": ""5c93e0d8-7f14-4a6b-b2c5-91e8d3a4f760"",
-                    ""path"": ""<Keyboard>/f"",
+                    ""id"": ""e1c59aa6-4bfe-4ea4-b5ff-027f903418fe"",
+                    ""path"": ""<Keyboard>/leftShift"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard"",
-                    ""action"": ""Mine"",
+                    ""action"": ""ActivateDefense"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -514,7 +514,7 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
         m_Battle_Reset = m_Battle.FindAction("Reset", throwIfNotFound: true);
         m_Battle_Boost = m_Battle.FindAction("Boost", throwIfNotFound: true);
         m_Battle_Activate = m_Battle.FindAction("Activate", throwIfNotFound: true);
-        m_Battle_Mine = m_Battle.FindAction("Mine", throwIfNotFound: true);
+        m_Battle_ActivateDefense = m_Battle.FindAction("ActivateDefense", throwIfNotFound: true);
     }
 
     ~@ControllerInput()
@@ -719,7 +719,7 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Battle_Reset;
     private readonly InputAction m_Battle_Boost;
     private readonly InputAction m_Battle_Activate;
-    private readonly InputAction m_Battle_Mine;
+    private readonly InputAction m_Battle_ActivateDefense;
     /// <summary>
     /// Provides access to input actions defined in input action map "Battle".
     /// </summary>
@@ -752,9 +752,9 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @Activate => m_Wrapper.m_Battle_Activate;
         /// <summary>
-        /// Provides access to the underlying input action "Battle/Mine".
+        /// Provides access to the underlying input action "Battle/ActivateDefense".
         /// </summary>
-        public InputAction @Mine => m_Wrapper.m_Battle_Mine;
+        public InputAction @ActivateDefense => m_Wrapper.m_Battle_ActivateDefense;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -796,9 +796,9 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
             @Activate.started += instance.OnActivate;
             @Activate.performed += instance.OnActivate;
             @Activate.canceled += instance.OnActivate;
-            @Mine.started += instance.OnMine;
-            @Mine.performed += instance.OnMine;
-            @Mine.canceled += instance.OnMine;
+            @ActivateDefense.started += instance.OnActivateDefense;
+            @ActivateDefense.performed += instance.OnActivateDefense;
+            @ActivateDefense.canceled += instance.OnActivateDefense;
         }
 
         /// <summary>
@@ -825,9 +825,9 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
             @Activate.started -= instance.OnActivate;
             @Activate.performed -= instance.OnActivate;
             @Activate.canceled -= instance.OnActivate;
-            @Mine.started -= instance.OnMine;
-            @Mine.performed -= instance.OnMine;
-            @Mine.canceled -= instance.OnMine;
+            @ActivateDefense.started -= instance.OnActivateDefense;
+            @ActivateDefense.performed -= instance.OnActivateDefense;
+            @ActivateDefense.canceled -= instance.OnActivateDefense;
         }
 
         /// <summary>
@@ -959,11 +959,11 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnActivate(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Mine" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "ActivateDefense" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnMine(InputAction.CallbackContext context);
+        void OnActivateDefense(InputAction.CallbackContext context);
     }
 }

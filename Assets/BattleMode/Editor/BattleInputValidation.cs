@@ -22,7 +22,7 @@ namespace HarborBattle.Editor
             Check(prefab!=null,"Missing Player prefab");
             var source=prefab.GetComponent<PlayerInput>()?.actions;
             Check(source!=null,"Player prefab must reference its mapping asset");
-            foreach(var action in new[] {"Player/Move","Player/Look","Player/Shoot","Battle/Join","Battle/StartMatch","Battle/Reset","Battle/Boost","Battle/Activate"})
+            foreach(var action in new[] {"Player/Move","Player/Look","Player/Shoot","Battle/Join","Battle/StartMatch","Battle/Reset","Battle/Boost","Battle/Activate","Battle/ActivateDefense"})
                 source.FindAction(action,true);
             Debug.Log("PASS: original Player prefab mapping and all battle actions are present.");
         }

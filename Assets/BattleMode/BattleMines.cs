@@ -119,7 +119,7 @@ namespace HarborBattle
                 body.linearVelocity=Vector2.zero;
                 if(lungeTimer<waitBeforeLunge) return;
                 launched=true;
-                if(target!=null && target.Alive)
+                if(target!=null && target.CanBeTargeted)
                 {
                     Vector2 direction=((Vector2)(target.transform.position-transform.position)).normalized;
                     body.rotation=Mathf.Atan2(direction.y,direction.x)*Mathf.Rad2Deg-90;
@@ -139,7 +139,7 @@ namespace HarborBattle
             BattleBoat best=null; float closest=detectionRange;
             foreach(var boat in BattleArena.Instance.Boats)
             {
-                if(boat==Owner || !boat.Alive) continue;
+                if(boat==Owner || !boat.CanBeTargeted) continue;
                 float distance=Vector2.Distance(boat.transform.position,transform.position);
                 if(distance<=closest) { best=boat; closest=distance; }
             }
