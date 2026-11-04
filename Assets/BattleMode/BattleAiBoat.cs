@@ -22,6 +22,7 @@ namespace HarborBattle
         private float progress,length,fireTimer,frozen,slowed,burning,burnTick;
         private Rigidbody2D body;
         private GameObject burnVisual,freezeVisual,slowVisual;
+        private AudioSource burnLoop;
 
         private void Awake()
         {
@@ -51,8 +52,10 @@ namespace HarborBattle
         {
             if(!Alive || !BattleArena.Instance.CanSimulate) return;
             Health=Mathf.Max(0,Health-Mathf.Max(0,damage));
+            if(damage>0 && !(BattleAudio.Instance?.HasSpecificImpact(effect) ?? false))BattleAudio.Instance?.Cue(BattleCue.CargoHit);
             if(Health==0)
             {
+                BattleAudio.Instance?.Cue(BattleCue.CargoSink);
                 finished=true;
                 GetComponent<Collider2D>().enabled=false;
                 BattleArena.Instance.DropLoot(transform.position,category);
@@ -85,6 +88,7 @@ namespace HarborBattle
             Status(ref burnVisual,burning>0,arena.vfx?.burning);
             Status(ref freezeVisual,frozen>0,arena.vfx?.frozen);
             Status(ref slowVisual,slowed>0,arena.vfx?.slowedPoison);
+            BattleAudio.Instance?.Burn(transform,burning>0 && !BattleSmoke.Contains(transform.position),ref burnLoop);
             if(frozen<=0) progress+=dt*speed*(slowed>0 ? arena.slowMultiplier : 1)/Mathf.Max(1,length);
             if(progress>=1) { finished=true; gameObject.SetActive(false); Destroy(gameObject); return; } // Escaped cargo drops nothing.
             Vector2 point=Point(start,controlA,controlB,end,progress);

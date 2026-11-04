@@ -22,12 +22,13 @@ namespace HarborBattle
                 popup=obj.AddComponent<BattleItemPopup>(); popup.owner=boat;
                 popup.canvas=obj.GetComponent<Canvas>();popup.canvas.renderMode=RenderMode.WorldSpace;popup.canvas.sortingOrder=80;
                 var background=obj.AddComponent<Image>();background.color=new Color(.04f,.07f,.1f,.96f);
+                background.sprite=BattleUiArt.Rounded;background.type=Image.Type.Sliced;
                 var picture=new GameObject("Item Icon",typeof(RectTransform),typeof(Image));picture.transform.SetParent(obj.transform,false);
                 var imageRect=picture.GetComponent<RectTransform>();imageRect.sizeDelta=new Vector2(60,60);imageRect.anchoredPosition=new Vector2(-95,0);
                 popup.icon=picture.GetComponent<Image>();popup.icon.preserveAspect=true;
                 var title=new GameObject("Item Name",typeof(RectTransform),typeof(Text));title.transform.SetParent(obj.transform,false);
                 var textRect=title.GetComponent<RectTransform>();textRect.sizeDelta=new Vector2(184,70);textRect.anchoredPosition=new Vector2(35,0);
-                popup.label=title.GetComponent<Text>();popup.label.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");popup.label.fontSize=19;popup.label.alignment=TextAnchor.MiddleLeft;
+                popup.label=title.GetComponent<Text>();popup.label.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");popup.label.fontSize=24;popup.label.alignment=TextAnchor.MiddleLeft;
                 background.raycastTarget=false;popup.icon.raycastTarget=false;popup.label.raycastTarget=false;
             }
             popup.icon.sprite=item.icon!=null ? item.icon : BattleItemIcons.For(item.kind);
