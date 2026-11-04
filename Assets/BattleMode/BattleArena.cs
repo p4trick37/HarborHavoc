@@ -67,6 +67,8 @@ namespace HarborBattle
         [Min(.1f)] public float shotgun360Cooldown=.8f;
         [Min(0)] public int shotgun360Damage=8;
         [Min(1)] public float starSpeedMultiplier=1.2f;
+        [Range(0,1)] public float starRamDamageFraction=.5f;
+        [Min(.1f)] public float starRamCooldown=1;
         [Min(1)] public float fastBoatSpeedMultiplier=2;
         [Min(.1f)] public float smokeRadius=5;
         [Min(.1f)] public float bubbleInterval=1.2f;
@@ -529,6 +531,7 @@ namespace HarborBattle
         private PowerUp weapon => offense.Active?.kind ?? PowerUp.None;
         private PowerUp protection => defense.Active?.kind ?? PowerUp.None;
         private bool Invincible => protection==PowerUp.Shield || protection==PowerUp.Star;
+        private readonly Dictionary<int,float> starRamHits=new Dictionary<int,float>();
         private readonly FogExposure fog=new FogExposure();
         private readonly System.Collections.Generic.Dictionary<SpriteRenderer,Color> originalColors=new System.Collections.Generic.Dictionary<SpriteRenderer,Color>();
         private float cooldown,frozen,slowed,burning,burnTick,waveTimer,bubbleTimer,starHue;
@@ -589,7 +592,7 @@ namespace HarborBattle
                         shieldVisual.transform.SetParent(transform,true);
                     }
                 }
-                if(protection==PowerUp.Star) {frozen=slowed=burning=burnTick=0;}
+                if(protection==PowerUp.Star) {frozen=slowed=burning=burnTick=0;starRamHits.Clear();}
                 if(protection==PowerUp.SmokeScreen) smoke=BattleSmoke.Deploy(transform.position,arena.smokeRadius,defense.Remaining);
                 if(IsSubmerged) bubbleTimer=0;
             }
@@ -682,6 +685,24 @@ namespace HarborBattle
                 int damage=weapon==PowerUp.Shotgun360 ? arena.shotgun360Damage : weapon==PowerUp.Shotgun ? 8 : weapon==PowerUp.HomingMissile ? 20 : 10;
                 BattleShot.Spawn(this,direction,damage,weapon);
             }
+        }
+        private void OnCollisionEnter2D(Collision2D collision) => StarRam(collision.collider);
+        private void OnCollisionStay2D(Collision2D collision) => StarRam(collision.collider);
+        private void StarRam(Collider2D other)
+        {
+            var arena=BattleArena.Instance;
+            if(arena==null || !arena.CanSimulate || !Alive || protection!=PowerUp.Star)return;
+            var player=other.GetComponentInParent<BattleBoat>();
+            var cargo=other.GetComponentInParent<BattleAiBoat>();
+            if(player==this || (player==null && cargo==null))return;
+            if(player!=null && (!player.Alive || player.IsSubmerged))return;
+            if(cargo!=null && !cargo.Alive)return;
+            int id=player!=null?player.GetInstanceID():cargo.GetInstanceID();
+            if(starRamHits.TryGetValue(id,out float nextHit) && Time.time<nextHit)return;
+            starRamHits[id]=Time.time+Mathf.Max(.1f,arena.starRamCooldown);
+            Vector2 push=((Vector2)other.transform.position-(Vector2)transform.position).normalized*8;
+            if(player!=null)player.Hit(Mathf.CeilToInt(100*arena.starRamDamageFraction),PowerUp.None,push);
+            else cargo.Hit(Mathf.CeilToInt(cargo.maxHealth*arena.starRamDamageFraction),PowerUp.None,push*.25f);
         }
         private void UpdateBoatCollisions()
         {
