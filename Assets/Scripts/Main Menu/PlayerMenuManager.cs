@@ -13,6 +13,7 @@ public class PlayerMenuManager : MonoBehaviour
     [SerializeField] private GameObject playerSelectScreen;
     [SerializeField] private Button startButton;
     [SerializeField] private TMP_Text startButtonText;
+    [SerializeField] private Button backButton;
     [SerializeField] private int minPlayers = 2;
     [SerializeField] private string battleSceneName = "BattleArena";
 
@@ -102,7 +103,7 @@ public class PlayerMenuManager : MonoBehaviour
         }
 
         Keyboard keyboard = Keyboard.current;
-        if (keyboard != null && keyboard.anyKey.wasPressedThisFrame && HasJoined(keyboard) == false)
+        if (keyboard != null && keyboard.anyKey.wasPressedThisFrame && keyboard.escapeKey.wasPressedThisFrame == false && HasJoined(keyboard) == false)
         {
             SpawnCard(keyboard);
         }
@@ -181,6 +182,7 @@ public class PlayerMenuManager : MonoBehaviour
             devices.Add(player.Gamepad);
         }
         BattleLobby.Set(devices);
+        BattleLobby.ResetSeries();
 
         if (sceneSwitcher != null)
         {
@@ -200,6 +202,7 @@ public class PlayerMenuManager : MonoBehaviour
             int currentPlayer = i + 1;
             string text = "P" + currentPlayer;
             playersSelected[i].SetText(text);
+            playersSelected[i].SetColor(BattleLobby.PlayerColor(i));
         }
         UpdateNavigation();
     }
@@ -225,7 +228,22 @@ public class PlayerMenuManager : MonoBehaviour
             Navigation startNavigation = new Navigation();
             startNavigation.mode = Navigation.Mode.Explicit;
             startNavigation.selectOnUp = playersSelected.Count > 0 ? playersSelected[0].LeaveButton : null;
+            startNavigation.selectOnDown = backButton;
             startButton.navigation = startNavigation;
         }
+
+        // Back sits under Start and leads back up to it.
+        if (backButton != null)
+        {
+            Navigation backNavigation = new Navigation();
+            backNavigation.mode = Navigation.Mode.Explicit;
+            backNavigation.selectOnUp = startButton;
+            backButton.navigation = backNavigation;
+        }
+    }
+
+    private void Start()
+    {
+        UpdateNavigation();
     }
 }

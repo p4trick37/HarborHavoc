@@ -351,6 +351,7 @@ MonoBehaviour:
   cargoSpawnInterval: 5
   maxCargoBoats: 4
   lootLifetime: 20
+  animalPrefab: {fileID: 239319237665313567, guid: 6f70b3fa73d327f4eab97ef4a1b54d25, type: 3}
   cameraPadding: 5
   freezeSeconds: 1
   slowSeconds: 3
@@ -364,6 +365,9 @@ MonoBehaviour:
   pickupArt: {fileID: -7794329322578014380, guid: ecaf3b9d7c743234d9ed3637de66bf8a, type: 3}
   shotArt: {fileID: 6635707809435179332, guid: edbec22aebf34a34aa778348a7cefcc2, type: 3}
   originalPlayerPrefab: {fileID: 473378636629930842, guid: 682165561cd68334db40c6b988220a6b, type: 3}
+  crosshairArt: {fileID: -6142374563283994760, guid: 7f97f7ed8c4e6f8408af6deda087383d, type: 3}
+  menuFont: {fileID: 11400000, guid: 22c3315eec03f5741ba7520435e1edd6, type: 2}
+  hudFont: {fileID: 12800000, guid: c0b06f446810b424eab317d1a8c4dc0b, type: 3}
   vfx: {fileID: 11400000, guid: 83f68de8837349209dc35705f97ea810, type: 2}
   pickupPool:
   - kind: 1

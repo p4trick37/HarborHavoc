@@ -16,8 +16,11 @@ public class UsersInputChoice : MonoBehaviour
 
     private bool mouseUsed = true;
 
+    private StartScreenNavigator navigator;
+
     private void Awake()
     {
+        navigator = FindAnyObjectByType<StartScreenNavigator>();
         controls = new ControllerInput();
 
         controls.Player.Move.performed += ctx => move = ctx.ReadValue<Vector2>();
@@ -36,10 +39,20 @@ public class UsersInputChoice : MonoBehaviour
         AllowController();
         AllowMouse();
 
-        if(mouseUsed == false && EventSystem.current.currentSelectedGameObject == null && startBattleButton.activeInHierarchy == true)
+        if(mouseUsed == false && EventSystem.current.currentSelectedGameObject == null && DefaultButton() != null && DefaultButton().activeInHierarchy == true)
         {
-            EventSystem.current.SetSelectedGameObject(startBattleButton);
+            EventSystem.current.SetSelectedGameObject(DefaultButton());
         }
+    }
+
+    // The first button of whichever start screen menu is showing.
+    private GameObject DefaultButton()
+    {
+        if(navigator != null)
+        {
+            return navigator.FirstButton;
+        }
+        return campaignButton.activeInHierarchy ? campaignButton : startBattleButton;
     }
 
     public void Switch()
@@ -57,16 +70,8 @@ public class UsersInputChoice : MonoBehaviour
     {
         if(move != Vector2.zero && chosenInput == false && mouseUsed == true)
         {
-            if(campaignButton.activeInHierarchy == true)
-            {
-                EventSystem.current.SetSelectedGameObject(null);
-                EventSystem.current.SetSelectedGameObject(campaignButton);
-            }
-            else
-            {
-                EventSystem.current.SetSelectedGameObject(null);
-                EventSystem.current.SetSelectedGameObject(startBattleButton);
-            }
+            EventSystem.current.SetSelectedGameObject(null);
+            EventSystem.current.SetSelectedGameObject(DefaultButton());
             mouseUsed = false;
         }
     }

@@ -2,11 +2,11 @@
 
 Open BattleArena.unity and focus the Game view. Start joins a controller; Start again or A starts the match (one player launches solo testing). Enter creates keyboard players or adds a keyboard opponent. Last player boat afloat wins; cargo never counts toward victory. Esc/B resets. Start-screen joins still carry into battle and rematch with the same players.
 
-| Player | Move | Aim | Fire | Offensive activation | Defensive activation |
-| --- | --- | --- | --- | --- | --- |
-| Keyboard P1 | WASD | Mouse | Click / Space | E | Left Shift |
-| Keyboard P2 | Arrows | Last arrow direction | Right Ctrl | Enter | Right Shift |
-| Controller | Left stick | Right stick | RT | Square / X (west face) | LT |
+| Player | Move | Aim | Fire | Offensive activation | Defensive activation | Mine |
+| --- | --- | --- | --- | --- | --- | --- |
+| Keyboard P1 | WASD | Mouse | Click / Space | E | Left Shift | F |
+| Keyboard P2 | Arrows | Last arrow direction | Right Ctrl | Enter | Right Shift | / (slash) |
+| Controller | Left stick | Right stick | RT | Square / X (west face) | LT | R1 / RB |
 
 ## One item per category
 
@@ -62,3 +62,17 @@ See Assets/Sound/Battle/SOUND_LIST.md for every requested filename, including al
 Open Battle Mode > Item Tester while in Play Mode. Join/start, select P1/P2/etc., choose an item and test duration, then Give item or Give and activate now. The window defaults to SmokeScreen and 15 seconds for convenient testing. Giving changes only that player copy, not the regular pickup pool.
 
 Alternatively drag any prefab from Assets/BattleMode/TestPickups into BattleArena near a spawn point. SmokeScreen.prefab and Underwater.prefab are useful first choices. Start the match, sail over the icon, then press LT/L2 (keyboard Shift) for defense or Square/X (keyboard E/Enter) for offense. The prefab Inspector exposes item, duration, respawn and respawn delay. Default test pickups last five seconds and respawn after eight seconds. Remove test pickups from the shipping arena when finished.
+
+## Sea mines
+
+Each player starts every match with 3 sea mines (Battle Arena > Mines Per Player). The Mine button drops the Animal prefab behind the boat, where it lurks. After a one-second arming delay it behaves like the campaign Animal: when an opposing boat comes within its detection range it charges, and within attack range it pauses, lunges, then drags to a stop and cools down. If it hits a boat it deals its contact damage and is destroyed; Shield and Star block it. It ignores hidden boats (Underwater or inside smoke). It never targets or collides with the player who dropped it, and other players can shoot it. Detection range, attack range, speed, lunge and damage come from the AnimalController on the Animal prefab, and health from its EnemyHealth, so edit the prefab to tune both modes. Those campaign scripts are stripped from battle copies. Mine bindings live in the Battle map of ControllerInput.inputactions.
+
+## Lives
+
+The start screen flow is Mode (Campaign / Battle) > Battle Settings > Player Select; B or Esc goes back one screen. Battle Settings picks how many lives every player gets (1 to 9, default 3; left/right on the Lives row or its arrow buttons). Losing all hull costs a life: the boat explodes, respawns at its starting spot after Respawn Delay (2 s) with full hull and blinks invincible for Respawn Invincibility (2 s). Items in hand are lost on death; mines carry over. A player with no lives left is eliminated, and the match ends when one player still has lives. Opening BattleArena directly uses the default 3 lives. Build the settings screen in StartScreen with Battle Mode > Add Battle Settings Screen.
+
+## Match formats
+
+Battle Settings also picks a match format: Single Game, First to 2/3/5, or Best of 3/5/7 (left/right on the Match row or its arrows). Wins carry between games; the HUD shows the game number and score, and the end screen shows the score with Next Game until the series is decided, then Rematch (a fresh series). First to N ends when someone reaches N wins. Best of N ends once someone has a majority; if all N games are played without one (draws), most wins takes it and a tie plays on. Draws count as a game with no winner. Main Menu or launching from the start screen resets the score. Add the row to an existing settings screen with Battle Mode > Add Match Format Setting.
+
+The Heart HUD uses Battle Arena > Hud Font (Blustrue, the menu font). Its top middle shows only the game number and each player's wins during a series; each heart shows Lives and Mines under the health percentage, and results appear on the end screen menu instead of the banner.

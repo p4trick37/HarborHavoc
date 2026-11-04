@@ -17,19 +17,21 @@ namespace HarborBattle
         private float goUntil;
         private readonly Color[] colors={Color.cyan,new Color(1,.45f,.25f),Color.yellow,Color.magenta};
         private class ItemPanel {public Image icon,shade,button;public Text seconds,key;public string glyph;}
-        private class PlayerPanel {public GameObject root;public Image liquid;public Text percent,name,world;public ItemPanel offense,defense;public float health=1;}
+        private class PlayerPanel {public GameObject root;public Image liquid;public Text percent,name,stats,world;public ItemPanel offense,defense;public float health=1;}
 
         public void Initialize(BattleArena owner)
         {
-            arena=owner;font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            arena=owner;
+            // The menu screen's font (Blustrue), falling back to Unity's built-in font.
+            font=owner.hudFont!=null ? owner.hudFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             heart=BattleUiArt.Heart;boat=BattleUiArt.Sloop;xButton=Shape(2);squareButton=Shape(3);keycap=BattleUiArt.Keycap;
             var obj=new GameObject("Battle HUD",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler));obj.transform.SetParent(transform,false);
-            canvas=obj.GetComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.sortingOrder=200;
+            canvas=obj.GetComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.sortingOrder=50; // Under the end screen menu.
             var scaler=obj.GetComponent<CanvasScaler>();scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new Vector2(1920,1080);scaler.matchWidthOrHeight=.5f;
             for(int i=0;i<4;i++) players[i]=BuildPlayer(i,obj.transform);
             banner=Picture("Match Banner",obj.transform,400,260,1120,560,null,new Color(.015f,.04f,.07f,.78f));
             banner.pixelsPerUnitMultiplier=.5f;
-            title=Words("Match Status",obj.transform,360,20,1200,72,34,TextAnchor.MiddleCenter);
+            title=Words("Match Status",obj.transform,360,14,1200,130,46,TextAnchor.UpperCenter);
             large=Words("Countdown and Result",obj.transform,360,300,1200,300,112,TextAnchor.MiddleCenter);
             subtitle=Words("Match Instructions",obj.transform,430,620,1060,170,34,TextAnchor.MiddleCenter);
         }
@@ -47,6 +49,7 @@ namespace HarborBattle
             panel.liquid.type=Image.Type.Filled;panel.liquid.fillMethod=Image.FillMethod.Vertical;panel.liquid.fillOrigin=(int)Image.OriginVertical.Bottom;
             Picture("Pirate sloop silhouette",root.transform,38,68,164,130,boat,new Color(.015f,.025f,.04f,.95f));
             panel.percent=Words("Health percentage",root.transform,54,145,132,48,42,TextAnchor.MiddleCenter);
+            panel.stats=Words("Lives and mines",root.transform,0,194,240,32,24,TextAnchor.MiddleCenter);
             panel.offense=BuildItem(root.transform,8);panel.defense=BuildItem(root.transform,132);
             panel.world=Words("Player world label",parent,0,0,130,45,30,TextAnchor.MiddleCenter);
             panel.world.color=colors[index];return panel;
@@ -93,7 +96,8 @@ namespace HarborBattle
                 var player=arena.Boats[i];float target=Mathf.Clamp01(player.Health/100f);
                 panel.health=Mathf.MoveTowards(panel.health,target,Time.unscaledDeltaTime*1.5f);panel.liquid.fillAmount=panel.health;
                 panel.percent.text=Mathf.RoundToInt(target*100)+"%";
-                panel.name.text="P"+(i+1)+(player.Alive?(arena.IsInFog(player.transform.position)?"  FOG!":""):"  OUT");
+                panel.name.text="P"+(i+1)+(player.Eliminated?"  OUT":!player.Alive?"  RESPAWNING":arena.IsInFog(player.transform.position)?"  FOG!":"");
+                panel.stats.text="Lives "+player.Lives+"   Mines "+player.Mines;
                 UpdateItem(panel.offense,player,ItemCategory.Offensive);UpdateItem(panel.defense,player,ItemCategory.Defensive);
                 if(player.Alive && !player.IsHidden && Camera.main!=null)
                 {
@@ -107,14 +111,24 @@ namespace HarborBattle
                 }
             }
             if(wasCounting && !arena.CountingDown && arena.Running)goUntil=Time.unscaledTime+.65f;
-            wasCounting=arena.CountingDown;banner.gameObject.SetActive(!arena.Running);
-            title.text=arena.Running?(arena.CanSimulate?(arena.SoloTest?"SOLO TEST":"LAST BOAT AFLOAT"):"CONTROLLER DISCONNECTED"):"BATTLE MODE";
+            wasCounting=arena.CountingDown;
+            // After a game the end screen menu shows the result, so the banner stays hidden then.
+            banner.gameObject.SetActive(!arena.Running && arena.RoundResult==null);
+            // Top middle: just the game number and each player's wins, during a series.
+            title.text="";
+            if(BattleLobby.IsSeries && arena.RoundResult==null && (arena.Running || arena.CountingDown))
+            {
+                string wins="";
+                foreach(var boat in arena.Boats)
+                    wins+="<color=#"+ColorUtility.ToHtmlStringRGB(BattleLobby.PlayerColor(boat.Index))+">P"+(boat.Index+1)+"  "+BattleLobby.Wins[boat.Index]+"</color>      ";
+                title.text="Game "+(BattleLobby.GamesPlayed+1)+"\n<size=40>"+wins.TrimEnd()+"</size>";
+            }
             large.fontSize=arena.CountingDown?144:80;
-            if(arena.RoundResult!=null) {large.text=arena.RoundResult.ToUpperInvariant();subtitle.text="Press START or ENTER for a new match";}
+            if(arena.RoundResult!=null) {large.text="";subtitle.text="";}
             else if(arena.CountingDown) {large.text=Mathf.Max(1,Mathf.CeilToInt(arena.CountdownRemaining)).ToString();subtitle.text="GET READY";}
             else if(arena.Running)
             {
-                large.text=!arena.CanSimulate?"RECONNECT CONTROLLER":Time.unscaledTime<goUntil?"GO!":"";subtitle.text="";
+                large.text=!arena.CanSimulate?"RECONNECT CONTROLLER":Time.unscaledTime<goUntil?"GO!":"";subtitle.text=arena.SoloTest && arena.CanSimulate?"SOLO TEST":"";
             }
             else
             {
