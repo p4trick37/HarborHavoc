@@ -9,6 +9,9 @@ namespace HarborBattle
     public static class BattleLobby
     {
         public const int MaxPlayers=4;
+        // One color per player slot: boats, health bars and the start-screen cards all use these.
+        public static readonly Color[] PlayerColors={ Color.cyan, new Color(1,.45f,.25f), Color.yellow, Color.magenta };
+        public static Color PlayerColor(int index) => PlayerColors[index%PlayerColors.Length];
         public static readonly List<Gamepad> Players=new List<Gamepad>();
         public static bool HasPlayers => Players.Count>0;
 

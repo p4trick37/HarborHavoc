@@ -73,6 +73,11 @@ namespace HarborBattle
         [Header("Project artwork")]
         public Sprite boatArt, cannonArt, islandArt, pickupArt, shotArt;
         public GameObject originalPlayerPrefab;
+        [Header("Aim guide: line from the cannon with a crosshair at the end")]
+        public Sprite crosshairArt;
+        [Min(.5f)] public float aimGuideLength=2.5f;
+        [Min(.01f)] public float aimGuideWidth=.08f;
+        [Min(.1f)] public float crosshairSize=.8f;
         [Header("Swappable VFX mappings")]
         public BattleVfxProfile vfx;
         [Header("Random pickup pool (zero weight disables an entry)")]
@@ -105,7 +110,6 @@ namespace HarborBattle
         private readonly Dictionary<Gamepad,InputActionAsset> lobbyInputs=new Dictionary<Gamepad,InputActionAsset>();
         private static Sprite square;
         private static Material artMaterial;
-        private readonly Color[] colors = { Color.cyan, new Color(1,.45f,.25f), Color.yellow, Color.magenta };
 
         private void Awake()
         {
@@ -455,6 +459,11 @@ namespace HarborBattle
                 turret.transform.SetParent(obj.transform,true);
                 boat.Turret=turret.transform;
             }
+            // Tint the boat with the player's health-bar color; the cannon gets a lighter shade.
+            // BattleBoat records these as its base colors, so fog and Star effects keep them.
+            var playerColor=BattleLobby.PlayerColor(index);
+            foreach(var renderer in obj.GetComponentsInChildren<SpriteRenderer>(true))
+                renderer.color=renderer.transform.IsChildOf(boat.Turret) ? Color.Lerp(Color.white,playerColor,.5f) : playerColor;
             var input=obj.GetComponent<PlayerInput>();
             if(input!=null)
             {
@@ -515,7 +524,7 @@ namespace HarborBattle
                 GUI.Label(new Rect(x+10,y+5,panelWidth-20,24),"P"+(i+1)+"  "+(boat.Alive ? "Hull: "+boat.Health+" / 100  Mines: "+boat.Mines+(IsInFog(boat.transform.position) ? "  FOG!" : "") : "ELIMINATED"));
                 GUI.color=new Color(.08f,.1f,.12f);
                 GUI.DrawTexture(new Rect(x+10,y+32,panelWidth-20,14),Texture2D.whiteTexture);
-                GUI.color=colors[i];
+                GUI.color=BattleLobby.PlayerColor(i);
                 GUI.DrawTexture(new Rect(x+10,y+32,(panelWidth-20)*Mathf.Clamp01(boat.Health/100f),14),Texture2D.whiteTexture);
                 GUI.Label(new Rect(x+10,y+52,panelWidth-20,60),boat.PowerLabel);
                 if(boat.Alive && !boat.IsHidden)
@@ -557,6 +566,8 @@ namespace HarborBattle
         private GameObject shieldVisual,burnVisual,freezeVisual,slowVisual,boostVisual;
         private BattleSmoke smoke;
         private LineRenderer aimLine,aimMarker;
+        private LineRenderer aimGuide;
+        private SpriteRenderer crosshair;
 
         public string PowerLabel
         {
@@ -705,6 +716,34 @@ namespace HarborBattle
             }
             BattleVisibility.Apply(transform,IsHidden);
             UpdateLaserGuide();
+            UpdateAimGuide();
+        }
+        // A short line in the player's color out from the cannon, with the crosshair at its end.
+        // Hidden with the boat so smoke and Underwater still conceal where it's aiming.
+        private void UpdateAimGuide()
+        {
+            var arena=BattleArena.Instance;
+            bool visible=Alive && !IsHidden;
+            if(!visible){if(aimGuide!=null)aimGuide.enabled=false;if(crosshair!=null)crosshair.enabled=false;return;}
+            var color=BattleLobby.PlayerColor(Index);
+            if(aimGuide==null){aimGuide=Line("Aim guide",new Color(color.r,color.g,color.b,.55f),arena.aimGuideWidth);aimGuide.positionCount=2;}
+            if(crosshair==null)
+            {
+                var obj=new GameObject("P"+(Index+1)+" Crosshair",typeof(SpriteRenderer));
+                crosshair=obj.GetComponent<SpriteRenderer>();
+                crosshair.sprite=arena.crosshairArt!=null ? arena.crosshairArt : Sprite.Create(Texture2D.whiteTexture,new Rect(0,0,4,4),Vector2.one*.5f,4);
+                crosshair.sharedMaterial=GetComponentInChildren<SpriteRenderer>(true).sharedMaterial;
+                crosshair.color=color;crosshair.sortingOrder=9;
+                float size=Mathf.Max(crosshair.sprite.bounds.size.x,crosshair.sprite.bounds.size.y);
+                obj.transform.localScale=Vector3.one*(arena.crosshairSize/size);
+            }
+            Vector2 start=(Vector2)(Turret!=null ? Turret.position : transform.position)+aim*.9f;
+            Vector2 end=start+aim*arena.aimGuideLength;
+            // The Laser item draws its own longer guide, so only the crosshair stays up then.
+            aimGuide.enabled=weapon!=PowerUp.Laser;
+            aimGuide.SetPosition(0,new Vector3(start.x,start.y,-1));aimGuide.SetPosition(1,new Vector3(end.x,end.y,-1));
+            crosshair.enabled=true;
+            crosshair.transform.position=new Vector3(end.x,end.y,-1);
         }
         private void Bubbles()
         {
@@ -793,6 +832,7 @@ namespace HarborBattle
         private void OnDestroy()
         {
             if(KeyboardActions!=null){KeyboardActions.Disable();Destroy(KeyboardActions);}
+            if(crosshair!=null) Destroy(crosshair.gameObject);
             var input=GetComponent<PlayerInput>();
             if(input!=null && input.actions!=null){input.actions.Disable();Destroy(input.actions);}
         }

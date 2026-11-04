@@ -61,5 +61,10 @@ public class PlayerMenu : MonoBehaviour
     {
         playerText.text = text;
     }
+
+    public void SetColor(Color color)
+    {
+        playerText.color = color;
+    }
 }
 

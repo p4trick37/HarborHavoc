@@ -200,6 +200,7 @@ public class PlayerMenuManager : MonoBehaviour
             int currentPlayer = i + 1;
             string text = "P" + currentPlayer;
             playersSelected[i].SetText(text);
+            playersSelected[i].SetColor(BattleLobby.PlayerColor(i));
         }
         UpdateNavigation();
     }
