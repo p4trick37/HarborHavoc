@@ -337,6 +337,7 @@ MonoBehaviour:
   cargoSpawnInterval: 5
   maxCargoBoats: 4
   lootLifetime: 20
+  animalPrefab: {fileID: 239319237665313567, guid: 6f70b3fa73d327f4eab97ef4a1b54d25, type: 3}
   cameraPadding: 5
   freezeSeconds: 1
   slowSeconds: 3

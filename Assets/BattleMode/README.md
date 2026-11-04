@@ -2,11 +2,11 @@
 
 Open BattleArena.unity, Play, and focus the Game view. Controllers press Start to join, then A starts the countdown. With no controllers, two keyboard boats appear; Enter starts the match. Last boat afloat wins. Esc resets the lobby.
 
-| Player | Move | Aim | Fire | Boost | Activate |
-| --- | --- | --- | --- | --- | --- |
-| P1 keyboard | WASD | Mouse | Click / Space | Left Shift | E |
-| P2 keyboard | Arrows | Last arrow direction | Right Ctrl | Right Shift | Enter |
-| Controller | Left stick | Right stick | RT | LT | West face button (Xbox X) |
+| Player | Move | Aim | Fire | Boost | Activate | Mine |
+| --- | --- | --- | --- | --- | --- | --- |
+| P1 keyboard | WASD | Mouse | Click / Space | Left Shift | E | F |
+| P2 keyboard | Arrows | Last arrow direction | Right Ctrl | Right Shift | Enter | / (slash) |
+| Controller | Left stick | Right stick | RT | LT | West face button (Xbox X) | R1 / RB |
 
 The arena is 64 x 36, twice its previous width and height. The camera follows surviving boats and zooms to fit them. Existing boat art, Level 1 animated water, and corner health bars remain.
 
@@ -46,3 +46,7 @@ The solid walls are removed. The safe play area stays fixed at 64 x 36; crossing
 Select Battle Arena to edit Cargo Spawn Interval (5 seconds), Max Cargo Boats (4), Loot Lifetime (20 seconds), Fog Damage Per Second (10), and fog opacity. Select Assets/BattleMode/CargoBoat.prefab to edit Max Health (30), Speed (5), and Can Shoot (off by default). Optional shooting targets nearby players and exposes range, interval, and damage. Cargo is excluded from victory and spawns during solo testing too.
 
 Boats enter beyond the camera and safe area, follow randomized cubic curves through the arena, and despawn at the far off-screen endpoint. Routes are sampled to avoid islands. Cargo accepts regular projectiles, lasers, homing missiles, shockwaves, freeze, fire and slow effects. Boat deaths reuse the configured explosion VFX. The dedicated prefab uses the existing boat/cannon artwork; swap its renderers to change the cargo skin.
+
+## Sea mines
+
+Each player starts every match with 3 sea mines (Battle Arena > Mines Per Player). The Mine button drops the Animal prefab behind the boat, where it lurks. After a one-second arming delay it behaves like the campaign Animal: when an opposing boat comes within its detection range it charges, and within attack range it pauses, lunges, then drags to a stop and cools down. If it hits a boat it deals its contact damage and is destroyed; shields block it. It never targets or collides with the player who dropped it, and other players can shoot it. Detection range, attack range, speed, lunge and damage come from the AnimalController on the Animal prefab, and health from its EnemyHealth, so edit the prefab to tune both modes. Those campaign scripts are stripped from battle copies. Mine bindings live in the Battle map of ControllerInput.inputactions.

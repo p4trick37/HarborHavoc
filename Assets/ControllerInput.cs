@@ -325,6 +325,15 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Mine"",
+                    ""type"": ""Button"",
+                    ""id"": ""8d2f6c1e-4b7a-4e39-9a51-3c0e7f2b6d84"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -437,6 +446,28 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
                     ""action"": ""Activate"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e47a1b93-25c6-4d0f-8b3e-6a9d1f05c2b7"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Controller"",
+                    ""action"": ""Mine"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5c93e0d8-7f14-4a6b-b2c5-91e8d3a4f760"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Mine"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -483,6 +514,7 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
         m_Battle_Reset = m_Battle.FindAction("Reset", throwIfNotFound: true);
         m_Battle_Boost = m_Battle.FindAction("Boost", throwIfNotFound: true);
         m_Battle_Activate = m_Battle.FindAction("Activate", throwIfNotFound: true);
+        m_Battle_Mine = m_Battle.FindAction("Mine", throwIfNotFound: true);
     }
 
     ~@ControllerInput()
@@ -687,6 +719,7 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Battle_Reset;
     private readonly InputAction m_Battle_Boost;
     private readonly InputAction m_Battle_Activate;
+    private readonly InputAction m_Battle_Mine;
     /// <summary>
     /// Provides access to input actions defined in input action map "Battle".
     /// </summary>
@@ -718,6 +751,10 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Battle/Activate".
         /// </summary>
         public InputAction @Activate => m_Wrapper.m_Battle_Activate;
+        /// <summary>
+        /// Provides access to the underlying input action "Battle/Mine".
+        /// </summary>
+        public InputAction @Mine => m_Wrapper.m_Battle_Mine;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -759,6 +796,9 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
             @Activate.started += instance.OnActivate;
             @Activate.performed += instance.OnActivate;
             @Activate.canceled += instance.OnActivate;
+            @Mine.started += instance.OnMine;
+            @Mine.performed += instance.OnMine;
+            @Mine.canceled += instance.OnMine;
         }
 
         /// <summary>
@@ -785,6 +825,9 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
             @Activate.started -= instance.OnActivate;
             @Activate.performed -= instance.OnActivate;
             @Activate.canceled -= instance.OnActivate;
+            @Mine.started -= instance.OnMine;
+            @Mine.performed -= instance.OnMine;
+            @Mine.canceled -= instance.OnMine;
         }
 
         /// <summary>
@@ -915,5 +958,12 @@ public partial class @ControllerInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnActivate(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Mine" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnMine(InputAction.CallbackContext context);
     }
 }

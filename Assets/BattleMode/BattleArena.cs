@@ -22,7 +22,7 @@ namespace HarborBattle
     public struct BoatCommand
     {
         public Vector2 Move, Aim;
-        public bool Fire, Boost, Activate;
+        public bool Fire, Boost, Activate, Mine;
     }
 
     public class BattleArena : MonoBehaviour
@@ -41,6 +41,9 @@ namespace HarborBattle
         [Min(.1f)] public float cargoSpawnInterval=5;
         [Min(0)] public int maxCargoBoats=4;
         [Min(.1f)] public float lootLifetime=20;
+        [Header("Sea mines (R1 / F): drops the Animal, tuned on its prefab")]
+        public GameObject animalPrefab;
+        [Min(0)] public int minesPerPlayer=3;
         [Min(0)] public float cameraPadding=5;
         [Min(.1f)] public float freezeSeconds=1;
         [Min(.1f)] public float slowSeconds=3;
@@ -374,7 +377,7 @@ namespace HarborBattle
                 return mapped;
             }
             var move=new Vector2((k.rightArrowKey.isPressed?1:0)-(k.leftArrowKey.isPressed?1:0),(k.upArrowKey.isPressed?1:0)-(k.downArrowKey.isPressed?1:0));
-            return new BoatCommand { Move=move, Aim=move, Fire=k.rightCtrlKey.isPressed, Boost=k.rightShiftKey.isPressed, Activate=k.enterKey.wasPressedThisFrame };
+            return new BoatCommand { Move=move, Aim=move, Fire=k.rightCtrlKey.isPressed, Boost=k.rightShiftKey.isPressed, Activate=k.enterKey.wasPressedThisFrame, Mine=k.slashKey.wasPressedThisFrame };
         }
 
         private void SpawnBoat(Gamepad pad,int index)
@@ -395,6 +398,7 @@ namespace HarborBattle
             obj.transform.position=positions[index];
             var boat=obj.GetComponent<BattleBoat>() ?? obj.AddComponent<BattleBoat>();
             boat.Index=index;
+            boat.Mines=minesPerPlayer;
             var campaignController=obj.GetComponent<PlayerController>();
             if(campaignController!=null) campaignController.enabled=false;
             var campaignHealth=obj.GetComponent<PlayerHealth>();
@@ -445,6 +449,7 @@ namespace HarborBattle
             foreach(var effect in FindObjectsByType<BattleVfxLifetime>(FindObjectsSortMode.None)) Destroy(effect.gameObject);
             foreach (var boat in Boats) Destroy(boat.gameObject);
             foreach (var shot in FindObjectsByType<BattleShot>(FindObjectsSortMode.None)) Destroy(shot.gameObject);
+            foreach (var animal in FindObjectsByType<BattleAnimal>(FindObjectsSortMode.None)) Destroy(animal.gameObject);
             foreach(var cargo in CargoBoats) if(cargo!=null) {cargo.gameObject.SetActive(false);Destroy(cargo.gameObject);}
             CargoBoats.Clear();
             foreach(var drop in FindObjectsByType<BattlePickup>(FindObjectsSortMode.None)) {drop.gameObject.SetActive(false);Destroy(drop.gameObject);}
@@ -463,7 +468,7 @@ namespace HarborBattle
             {
                 GUI.Box(new Rect(Screen.width*.2f,Screen.height*.43f,Screen.width*.6f,100),GUIContent.none);
                 GUI.Label(new Rect(Screen.width*.22f,Screen.height*.44f,Screen.width*.56f,95),
-                    "P1: WASD / mouse / click / Shift boost / E item\nP2: arrows / Right Ctrl fire / Right Shift boost / Enter item\nController: sticks / RT fire / LT boost / X item\nEsc: lobby",style);
+                    "P1: WASD / mouse / click / Shift boost / E item / F mine\nP2: arrows / Right Ctrl fire / Right Shift boost / Enter item / slash mine\nController: sticks / RT fire / LT boost / X item / RB mine\nEsc: lobby",style);
             }
             for(int i=0;i<Boats.Count;i++)
             {
@@ -472,7 +477,7 @@ namespace HarborBattle
                 GUI.color=Color.white;
                 GUI.Box(new Rect(x,y,panelWidth,116),GUIContent.none);
                 var boat=Boats[i];
-                GUI.Label(new Rect(x+10,y+5,panelWidth-20,24),"P"+(i+1)+"  "+(boat.Alive ? "Hull: "+boat.Health+" / 100"+(IsInFog(boat.transform.position) ? "  FOG!" : "") : "ELIMINATED"));
+                GUI.Label(new Rect(x+10,y+5,panelWidth-20,24),"P"+(i+1)+"  "+(boat.Alive ? "Hull: "+boat.Health+" / 100  Mines: "+boat.Mines+(IsInFog(boat.transform.position) ? "  FOG!" : "") : "ELIMINATED"));
                 GUI.color=new Color(.08f,.1f,.12f);
                 GUI.DrawTexture(new Rect(x+10,y+32,panelWidth-20,14),Texture2D.whiteTexture);
                 GUI.color=colors[i];
@@ -501,6 +506,8 @@ namespace HarborBattle
         public Transform Turret;
         public int Health { get; private set; } = 100;
         public bool Alive => Health>0;
+        public int Mines { get; set; }
+        private bool mineRequested;
         private readonly TimedLoadout<PickupOption> loadout=new TimedLoadout<PickupOption>();
         private PowerUp power => loadout.Active==null ? PowerUp.None : loadout.Active.kind;
         private float remaining => loadout.Remaining;
@@ -518,7 +525,7 @@ namespace HarborBattle
         private bool activateRequested;
         public string PowerLabel => (power!=PowerUp.None ? "ACTIVE: "+power+" "+remaining.ToString("0.0")+"s" : "READY: "+(primary==null ? "Empty" : primary.kind.ToString()))
             +"\nRESERVE: "+(reserve==null ? "Empty" : reserve.kind.ToString())+"\nActivate: "+(Index==0 ? "E / X" : "Enter / X");
-        public void Submit(BoatCommand input) { command=input; activateRequested|=input.Activate; }
+        public void Submit(BoatCommand input) { command=input; activateRequested|=input.Activate; mineRequested|=input.Mine; }
         public void Collect(PickupOption option)
         {
             loadout.Collect(option);
@@ -574,6 +581,11 @@ namespace HarborBattle
                 var color=sprite.color; color.a=inFog ? arena.fogBoatOpacity : 1; sprite.color=color;
             }
             if(activateRequested) { Activate(); activateRequested=false; }
+            if(mineRequested)
+            {
+                mineRequested=false;
+                if(Mines>0) { Mines--; BattleAnimal.Drop(this); }
+            }
             if(loadout.Tick(dt))
             {
                 if(shieldVisual!=null) Destroy(shieldVisual);
@@ -651,6 +663,9 @@ namespace HarborBattle
             foreach(var hit in Physics2D.RaycastAll(start,aim,40))
             {
                 if(hit.collider.isTrigger || hit.collider.GetComponentInParent<BattleBoat>()==this) continue;
+                var animal=hit.collider.GetComponentInParent<BattleAnimal>();
+                if(animal!=null && animal.Owner==this) continue;
+                animal?.Hit(30);
                 end=hit.point;
                 hit.collider.GetComponentInParent<BattleBoat>()?.Damage(30);
                 hit.collider.GetComponentInParent<BattleAiBoat>()?.Hit(30,PowerUp.None,Vector2.zero);
@@ -729,6 +744,10 @@ namespace HarborBattle
             foreach(var hit in hits)
             {
                 if(hit.collider.isTrigger || (owner!=null && hit.collider.transform.IsChildOf(owner))) continue;
+                // Shots pass through the shooter's own Animal and can kill anyone else's.
+                var animal=hit.collider.GetComponentInParent<BattleAnimal>();
+                if(animal!=null && animal.Owner!=null && animal.Owner.transform==owner) continue;
+                animal?.Hit(damage);
                 var cargo=hit.collider.GetComponentInParent<BattleAiBoat>();
                 if(fromAi && cargo!=null) continue;
                 hit.collider.GetComponentInParent<BattleBoat>()?.Hit(damage,effect,Vector2.zero);
