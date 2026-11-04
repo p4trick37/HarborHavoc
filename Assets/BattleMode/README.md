@@ -20,7 +20,7 @@ OffensiveCargoBoat.prefab: smaller (0.85 scale), faster (6.5), 20 health, orange
 
 Traffic enters off-screen, follows curved routes avoiding islands, and despawns without loot if it escapes. Only sinking cargo spawns mystery loot. Whoever physically collects a drop receives it, regardless of killer. Drops expire after 20 seconds. Battle Arena exposes spawn interval (5 seconds), maximum live cargo (4), category spawn ratio, and loot lifetime. A disabled category pool produces no loot for that category.
 
-The fixed safe area is 64 x 36. No walls block the fog; crossing an edge deals 10 hull damage/second. Re-entry stops damage. Shield and Star block fog damage; Underwater does not. Camera, fog visuals and player states support stealth: hidden boats are excluded from camera tracking; when every survivor is hidden, the camera stays put. Gameplay timers pause on controller disconnect.
+The fixed safe area is 64 x 36. No walls block the fog; crossing an edge deals 10 hull damage/second. Re-entry stops damage. Shield and Star block fog damage; Underwater does not. The camera frames every surviving boat, including underwater and smoke-hidden players, so neither player is lost from view. Boat rendering, labels and attached effects remain hidden during stealth. Gameplay timers pause on controller disconnect.
 
 ## Offensive items
 
@@ -47,3 +47,18 @@ BattleVfx.asset controls swappable projectile/muzzle/impact mappings from Master
 The full original Player prefab supplies visuals, collider, Rigidbody2D and PlayerInput. Campaign progression/health scripts are disabled on battle clones; BattleBoat handles local battle simulation. Online multiplayer is not implemented.
 
 Compilation and standalone slot/fog checks do not replace Play Mode testing. Run the standalone checks with dotnet run --project Tests/BattleMode/Tests.csproj. Playtesting is left to the user.
+
+## Heart HUD and audio
+
+The old corner text panels are replaced by a screen-space canvas with a 1920 x 1080 reference scale. Each corner shows a player-colored heart rim, ocean-blue empty health, red liquid filling upward to the health level, a side-view sailboat silhouette, and a large percentage. Below are item icons and device-specific controls (Xbox X/LT, PlayStation Square/L2, or keyboard keys). Active items gain a grey overlay from top to bottom with large seconds remaining. Countdown numbers, GO, lobby prompts, world labels and match results are larger. Stealth still hides world labels.
+
+Battle Arena > Audio Profile references BattleAudio.asset. It loops the existing campaign LevelMusic.mp3 and uses existing generic shot, hit and sink clips. Missing themed weapon/defense/UI clips get temporary synthesized sounds; those are placeholders, not finished sound design. Optional item loops and burning loops are supported. One sound is played per shotgun volley; repeated impacts/damage are throttled and SFX voices are capped. Music and SFX volume are independent.
+
+See Assets/Sound/Battle/SOUND_LIST.md for every requested filename, including all fourteen items. Importing matching audio clips under Assets/Sound/Battle auto-assigns them; Battle Mode > Assign Named Battle Sounds can be run manually. All profile fields remain directly editable. Play Mode visual/audio testing is left to the user.
+
+
+## Quick item testing
+
+Open Battle Mode > Item Tester while in Play Mode. Join/start, select P1/P2/etc., choose an item and test duration, then Give item or Give and activate now. The window defaults to SmokeScreen and 15 seconds for convenient testing. Giving changes only that player copy, not the regular pickup pool.
+
+Alternatively drag any prefab from Assets/BattleMode/TestPickups into BattleArena near a spawn point. SmokeScreen.prefab and Underwater.prefab are useful first choices. Start the match, sail over the icon, then press LT/L2 (keyboard Shift) for defense or Square/X (keyboard E/Enter) for offense. The prefab Inspector exposes item, duration, respawn and respawn delay. Default test pickups last five seconds and respawn after eight seconds. Remove test pickups from the shipping arena when finished.

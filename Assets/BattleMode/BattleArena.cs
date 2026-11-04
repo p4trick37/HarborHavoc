@@ -36,6 +36,11 @@ namespace HarborBattle
         public static BattleArena Instance { get; private set; }
         public readonly List<BattleBoat> Boats = new List<BattleBoat>();
         public bool Running { get; private set; }
+        public bool CountingDown => countingDown;
+        public float CountdownRemaining => countdown;
+        public string RoundResult => result;
+        public bool SoloTest => soloTest;
+        public BattleAudioProfile audioProfile;
         public const float HalfWidth = 32f, HalfHeight = 18f;
         [Header("Arena and effects")]
         [Header("Fixed fog boundary")]
@@ -62,6 +67,8 @@ namespace HarborBattle
         [Min(.1f)] public float shotgun360Cooldown=.8f;
         [Min(0)] public int shotgun360Damage=8;
         [Min(1)] public float starSpeedMultiplier=1.2f;
+        [Range(0,1)] public float starRamDamageFraction=.5f;
+        [Min(.1f)] public float starRamCooldown=1;
         [Min(1)] public float fastBoatSpeedMultiplier=2;
         [Min(.1f)] public float smokeRadius=5;
         [Min(.1f)] public float bubbleInterval=1.2f;
@@ -98,6 +105,7 @@ namespace HarborBattle
         private string result;
         private float countdown;
         private bool countingDown;
+        private int lastCountdown;
         private bool soloTest;
         private readonly Dictionary<Gamepad,InputActionAsset> lobbyInputs=new Dictionary<Gamepad,InputActionAsset>();
         private static Sprite square;
@@ -115,6 +123,8 @@ namespace HarborBattle
             cam.orthographic = true;
             cam.backgroundColor = new Color(.025f,.15f,.22f);
             cam.clearFlags = CameraClearFlags.SolidColor;
+            gameObject.AddComponent<BattleAudio>().Initialize(audioProfile);
+            gameObject.AddComponent<BattleHud>().Initialize(this);
             for(int i=0;i<fogBands.Length;i++)
             {
                 var band=Visual("Fog Border",Vector2.zero,Vector2.one,new Color(.8f,.85f,.9f,.8f));
@@ -213,7 +223,7 @@ namespace HarborBattle
             {
                 if(!boat.Alive) continue;
                 anyAlive=true;
-                if(boat.IsHidden) continue; // The camera must not track/reveal stealth positions.
+                // Keep every survivor framed, including submerged/smoke-hidden boats.
                 if(!found) { bounds=new Bounds(boat.transform.position,Vector3.zero); found=true; }
                 else bounds.Encapsulate(boat.transform.position);
             }
@@ -340,7 +350,13 @@ namespace HarborBattle
             {
                 foreach (var pad in pads)
                     if (pad!=null && !pad.added) { countingDown=false; break; }
-                if (countingDown && (countdown-=Time.deltaTime)<=0) { countingDown=false; Running=true; }
+                if(countingDown)
+                {
+                    countdown-=Time.deltaTime;
+                    int tick=Mathf.CeilToInt(countdown);
+                    if(tick>0 && tick!=lastCountdown) {lastCountdown=tick;BattleAudio.Instance?.Cue(BattleCue.Countdown);}
+                    if(countdown<=0) {countingDown=false;Running=true;BattleAudio.Instance?.Cue(BattleCue.Go);}
+                }
             }
             if (Running)
             {
@@ -355,7 +371,7 @@ namespace HarborBattle
                     var pad=pads[boat.Index];
                     boat.Submit(pad==null ? KeyboardCommand(boat) : BattleInput.Read(boat.GetComponent<PlayerInput>()?.actions));
                 }
-                if ((!soloTest && alive<=1) || alive==0) { Running=false; result=alive==1 ? "Player "+(survivor.Index+1)+" wins!" : "Draw!"; }
+                if ((!soloTest && alive<=1) || alive==0) { Running=false; result=alive==1 ? "Player "+(survivor.Index+1)+" wins!" : "Draw!";BattleAudio.Instance?.Cue(BattleCue.Victory); }
             }
             if (result!=null)
                 foreach (var pad in Gamepad.all)
@@ -378,6 +394,7 @@ namespace HarborBattle
             soloTest=forceSolo;
             cargoTimer=Mathf.Max(.1f,cargoSpawnInterval);
             countdown=3;
+            lastCountdown=3;BattleAudio.Instance?.Cue(BattleCue.Countdown);
             countingDown=true;
         }
 
@@ -488,39 +505,7 @@ namespace HarborBattle
             if (BattleLobby.HasPlayers) SpawnLobbyPlayers();
         }
 
-        private void OnGUI()
-        {
-            var style=new GUIStyle(GUI.skin.label) { fontSize=16, alignment=TextAnchor.MiddleCenter, wordWrap=true };
-            string heading=result ?? (countingDown ? "Ready: "+Mathf.CeilToInt(countdown) : Running ? (CanSimulate ? (soloTest ? "SOLO TEST" : "LAST BOAT AFLOAT") : "Reconnect controller to resume") : pads.Count+" / 4 joined\nSTART: join; press again to start (one player = solo test)\nENTER: add keyboard opponent / start");
-            float panelWidth=Mathf.Min(230,Screen.width*.27f);
-            GUI.Label(new Rect(panelWidth+20,8,Screen.width-2*panelWidth-40,65),heading,style);
-            if(!Running)
-            {
-                GUI.Box(new Rect(Screen.width*.2f,Screen.height*.43f,Screen.width*.6f,100),GUIContent.none);
-                GUI.Label(new Rect(Screen.width*.22f,Screen.height*.44f,Screen.width*.56f,95),
-                    "P1: WASD / mouse / click / E offense / Shift defense\nP2: arrows / Right Ctrl fire / Enter offense / Right Shift defense\nController: sticks / RT fire / X offense / LT defense\nEsc: lobby",style);
-            }
-            for(int i=0;i<Boats.Count;i++)
-            {
-                float x=i%2==0 ? 12 : Screen.width-panelWidth-12;
-                float y=i<2 ? 12 : Screen.height-128;
-                GUI.color=Color.white;
-                GUI.Box(new Rect(x,y,panelWidth,116),GUIContent.none);
-                var boat=Boats[i];
-                GUI.Label(new Rect(x+10,y+5,panelWidth-20,24),"P"+(i+1)+"  "+(boat.Alive ? "Hull: "+boat.Health+" / 100"+(IsInFog(boat.transform.position) ? "  FOG!" : "") : "ELIMINATED"));
-                GUI.color=new Color(.08f,.1f,.12f);
-                GUI.DrawTexture(new Rect(x+10,y+32,panelWidth-20,14),Texture2D.whiteTexture);
-                GUI.color=colors[i];
-                GUI.DrawTexture(new Rect(x+10,y+32,(panelWidth-20)*Mathf.Clamp01(boat.Health/100f),14),Texture2D.whiteTexture);
-                GUI.Label(new Rect(x+10,y+52,panelWidth-20,60),boat.PowerLabel);
-                if(boat.Alive && !boat.IsHidden)
-                {
-                    var position=arenaCamera.WorldToScreenPoint(boat.transform.position);
-                    GUI.Label(new Rect(position.x-20,Screen.height-position.y-55,55,25),"P"+(i+1));
-                }
-            }
-            GUI.color=Color.white;
-        }
+
     }
 
     public class BattleBoat : MonoBehaviour
@@ -532,6 +517,11 @@ namespace HarborBattle
         public bool Alive => Health>0;
         private readonly TimedLoadout<PickupOption> offense=new TimedLoadout<PickupOption>();
         private readonly TimedLoadout<PickupOption> defense=new TimedLoadout<PickupOption>();
+        public PickupOption HeldItem(ItemCategory category) => category==ItemCategory.Offensive ? offense.Active ?? offense.Ready : defense.Active ?? defense.Ready;
+        public bool ItemActive(ItemCategory category) => (category==ItemCategory.Offensive ? offense.Active : defense.Active)!=null;
+        public float ItemSeconds(ItemCategory category) => category==ItemCategory.Offensive ? offense.Remaining : defense.Remaining;
+        public float ItemTimeFraction(ItemCategory category) => HeldItem(category)==null ? 0 : Mathf.Clamp01(ItemSeconds(category)/Mathf.Max(.1f,HeldItem(category).duration));
+        private AudioSource offenseLoop,defenseLoop,burnLoop;
         public PowerUp OffensiveItem => (offense.Active ?? offense.Ready)?.kind ?? PowerUp.None;
         public PowerUp DefensiveItem => (defense.Active ?? defense.Ready)?.kind ?? PowerUp.None;
         public PowerUp ReadyItem => offense.Ready?.kind ?? defense.Ready?.kind ?? PowerUp.None;
@@ -541,6 +531,7 @@ namespace HarborBattle
         private PowerUp weapon => offense.Active?.kind ?? PowerUp.None;
         private PowerUp protection => defense.Active?.kind ?? PowerUp.None;
         private bool Invincible => protection==PowerUp.Shield || protection==PowerUp.Star;
+        private readonly Dictionary<int,float> starRamHits=new Dictionary<int,float>();
         private readonly FogExposure fog=new FogExposure();
         private readonly System.Collections.Generic.Dictionary<SpriteRenderer,Color> originalColors=new System.Collections.Generic.Dictionary<SpriteRenderer,Color>();
         private float cooldown,frozen,slowed,burning,burnTick,waveTimer,bubbleTimer,starHue;
@@ -567,18 +558,30 @@ namespace HarborBattle
             return button+": "+(item==null ? "Empty" : BattleItemPopup.Name(item.kind)+(slot.Active==null ? " [ready]" : " "+slot.Remaining.ToString("0.0")+"s"));
         }
         public void Submit(BoatCommand input) {command=input;activateOffense|=input.Activate;activateDefense|=input.ActivateDefense;}
+        public void GiveTestItem(PowerUp kind,float duration,bool activate=false)
+        {
+            if(!Alive || kind==PowerUp.None)return;
+            var template=BattleArena.Instance.pickupPool.Find(item=>item!=null && item.kind==kind);
+            var test=new PickupOption(kind,Mathf.Max(.1f,duration),template?.color ?? Color.white){icon=template?.icon};
+            Collect(test);
+            if(activate){if(test.Category==ItemCategory.Offensive)activateOffense=true;else activateDefense=true;}
+        }
         public void Collect(PickupOption item)
         {
+            if(item.Category==ItemCategory.Offensive)BattleAudio.Instance?.EndItem(weapon,ref offenseLoop);
+            else BattleAudio.Instance?.EndItem(protection,ref defenseLoop);
             if(item.Category==ItemCategory.Offensive) {offense.Collect(item);activateOffense=false;cooldown=0;}
             else {defense.Collect(item);EndDefense();activateDefense=false;}
+            BattleAudio.Instance?.Cue(BattleCue.Pickup);
             BattleItemPopup.Show(this,item);
         }
         private void ActivateItems()
         {
-            if(activateOffense && offense.TryActivate(item=>item.duration)) {cooldown=0;waveTimer=0;}
+            if(activateOffense && offense.TryActivate(item=>item.duration)) {cooldown=0;waveTimer=0;offenseLoop=BattleAudio.Instance?.ActivateItem(weapon,transform);}
             if(activateDefense && defense.TryActivate(item=>item.duration))
             {
                 var arena=BattleArena.Instance;
+                defenseLoop=BattleAudio.Instance?.ActivateItem(protection,transform);
                 if(protection==PowerUp.Shield)
                 {
                     shieldVisual=BattleVfx.Spawn(arena.vfx?.shield,transform.position,transform,true);
@@ -589,7 +592,7 @@ namespace HarborBattle
                         shieldVisual.transform.SetParent(transform,true);
                     }
                 }
-                if(protection==PowerUp.Star) {frozen=slowed=burning=burnTick=0;}
+                if(protection==PowerUp.Star) {frozen=slowed=burning=burnTick=0;starRamHits.Clear();}
                 if(protection==PowerUp.SmokeScreen) smoke=BattleSmoke.Deploy(transform.position,arena.smokeRadius,defense.Remaining);
                 if(IsSubmerged) bubbleTimer=0;
             }
@@ -603,8 +606,9 @@ namespace HarborBattle
         }
         public bool Hit(int amount,PowerUp effect,Vector2 push)
         {
+            if(Alive && Invincible && BattleArena.Instance.CanSimulate)BattleAudio.Instance?.Cue(BattleCue.ShieldBlock);
             if(!Alive || Invincible || IsSubmerged || !BattleArena.Instance.CanSimulate) return false;
-            Damage(amount);
+            Damage(amount,false,!(BattleAudio.Instance?.HasSpecificImpact(effect) ?? false));
             if(!Alive) return true;
             var arena=BattleArena.Instance;
             if(effect==PowerUp.FreezeShot) frozen=Mathf.Max(frozen,arena.freezeSeconds);
@@ -613,12 +617,16 @@ namespace HarborBattle
             knockback+=push;
             return true;
         }
-        public void Damage(int amount,bool fogDamage=false)
+        public void Damage(int amount,bool fogDamage=false,bool playHitSound=true)
         {
             if(!Alive || Invincible || (IsSubmerged && !fogDamage) || !BattleArena.Instance.CanSimulate) return;
             Health=Mathf.Max(0,Health-Mathf.Max(0,amount));
+            if(amount>0 && playHitSound)BattleAudio.Instance?.Cue(fogDamage?BattleCue.FogDamage:BattleCue.PlayerHit);
             if(!Alive)
             {
+                BattleAudio.Instance?.EndItem(weapon,ref offenseLoop);BattleAudio.Instance?.EndItem(protection,ref defenseLoop);
+                BattleAudio.Instance?.Cue(BattleCue.PlayerSink);
+                BattleAudio.Instance?.Burn(transform,false,ref burnLoop);
                 offense.Clear();defense.Clear();EndDefense();
                 GetComponent<Collider2D>().enabled=false;
                 foreach(var effect in new[] {burnVisual,freezeVisual,slowVisual}) if(effect!=null) Destroy(effect);
@@ -631,8 +639,9 @@ namespace HarborBattle
             var arena=BattleArena.Instance;
             if(!Alive || !arena.CanSimulate) return;
             float dt=Time.fixedDeltaTime;
-            ActivateItems();offense.Tick(dt);
-            if(defense.Tick(dt)) EndDefense();
+            ActivateItems();var oldWeapon=weapon;var oldDefense=protection;
+            if(offense.Tick(dt))BattleAudio.Instance?.EndItem(oldWeapon,ref offenseLoop);
+            if(defense.Tick(dt)) {BattleAudio.Instance?.EndItem(oldDefense,ref defenseLoop);EndDefense();}
             int fogDamage=fog.Tick(arena.IsInFog(transform.position),dt,arena.fogDamagePerSecond);
             if(fogDamage>0) {Damage(fogDamage,true);if(!Alive)return;}
             frozen=Mathf.Max(0,frozen-dt);slowed=Mathf.Max(0,slowed-dt);
@@ -647,6 +656,7 @@ namespace HarborBattle
             Status(ref burnVisual,burning>0,arena.vfx?.burning);
             Status(ref freezeVisual,frozen>0,arena.vfx?.frozen);
             Status(ref slowVisual,slowed>0,arena.vfx?.slowedPoison);
+            BattleAudio.Instance?.Burn(transform,burning>0 && !IsHidden,ref burnLoop);
             Status(ref boostVisual,protection==PowerUp.FastBoat && command.Move.sqrMagnitude>.01f,arena.vfx?.boost);
             float speed=5*(protection==PowerUp.FastBoat ? arena.fastBoatSpeedMultiplier : protection==PowerUp.Star ? arena.starSpeedMultiplier : 1);
             body.linearVelocity=(frozen>0 ? Vector2.zero : Vector2.ClampMagnitude(command.Move,1)*speed*(slowed>0 ? arena.slowMultiplier : 1))+knockback;
@@ -665,6 +675,7 @@ namespace HarborBattle
             if(weapon==PowerUp.Shockwave && (waveTimer-=dt)<=0) {Shockwave();waveTimer=1;}
             if(!command.Fire || cooldown>0)return;
             cooldown=weapon==PowerUp.RapidFire ? .09f : weapon==PowerUp.Shotgun ? .65f : weapon==PowerUp.Shotgun360 ? arena.shotgun360Cooldown : weapon==PowerUp.Laser ? .8f : weapon==PowerUp.HomingMissile ? 1 : .35f;
+            BattleAudio.Instance?.Shot(weapon==PowerUp.Shockwave?PowerUp.None:weapon);
             if(weapon==PowerUp.Laser) {FireLaser();return;}
             int count=weapon==PowerUp.Shotgun ? 5 : weapon==PowerUp.Shotgun360 ? Mathf.Max(6,arena.shotgun360Pellets) : 1;
             for(int i=0;i<count;i++)
@@ -674,6 +685,24 @@ namespace HarborBattle
                 int damage=weapon==PowerUp.Shotgun360 ? arena.shotgun360Damage : weapon==PowerUp.Shotgun ? 8 : weapon==PowerUp.HomingMissile ? 20 : 10;
                 BattleShot.Spawn(this,direction,damage,weapon);
             }
+        }
+        private void OnCollisionEnter2D(Collision2D collision) => StarRam(collision.collider);
+        private void OnCollisionStay2D(Collision2D collision) => StarRam(collision.collider);
+        private void StarRam(Collider2D other)
+        {
+            var arena=BattleArena.Instance;
+            if(arena==null || !arena.CanSimulate || !Alive || protection!=PowerUp.Star)return;
+            var player=other.GetComponentInParent<BattleBoat>();
+            var cargo=other.GetComponentInParent<BattleAiBoat>();
+            if(player==this || (player==null && cargo==null))return;
+            if(player!=null && (!player.Alive || player.IsSubmerged))return;
+            if(cargo!=null && !cargo.Alive)return;
+            int id=player!=null?player.GetInstanceID():cargo.GetInstanceID();
+            if(starRamHits.TryGetValue(id,out float nextHit) && Time.time<nextHit)return;
+            starRamHits[id]=Time.time+Mathf.Max(.1f,arena.starRamCooldown);
+            Vector2 push=((Vector2)other.transform.position-(Vector2)transform.position).normalized*8;
+            if(player!=null)player.Hit(Mathf.CeilToInt(100*arena.starRamDamageFraction),PowerUp.None,push);
+            else cargo.Hit(Mathf.CeilToInt(cargo.maxHealth*arena.starRamDamageFraction),PowerUp.None,push*.25f);
         }
         private void UpdateBoatCollisions()
         {
@@ -696,6 +725,7 @@ namespace HarborBattle
         }
         private void Bubbles()
         {
+            BattleAudio.Instance?.Cue(BattleCue.Bubbles);
             var arena=BattleArena.Instance;
             var effect=BattleVfx.Spawn(arena.vfx?.bubbles,transform.position);
             if(effect!=null) {effect.GetComponent<BattleVfxLifetime>().Remaining=arena.bubbleVisibleSeconds;return;}
@@ -746,8 +776,10 @@ namespace HarborBattle
             BattleVfx.Spawn(visual?.muzzle,start,null,false,aim);
             if(hit.collider!=null)
             {
-                hit.collider.GetComponentInParent<BattleBoat>()?.Hit(30,PowerUp.None,Vector2.zero);
-                hit.collider.GetComponentInParent<BattleAiBoat>()?.Hit(30,PowerUp.None,Vector2.zero);
+                var player=hit.collider.GetComponentInParent<BattleBoat>();var cargo=hit.collider.GetComponentInParent<BattleAiBoat>();
+                player?.Hit(30,PowerUp.Laser,Vector2.zero);
+                cargo?.Hit(30,PowerUp.Laser,Vector2.zero);
+                BattleAudio.Instance?.Impact(PowerUp.Laser,player!=null || cargo!=null);
                 BattleVfx.Spawn(visual?.impact,end,null,false,aim);
             }
             var beam=BattleVfx.Spawn(visual?.projectile,start,null,false,aim);
@@ -757,18 +789,19 @@ namespace HarborBattle
         }
         private void Shockwave()
         {
+            BattleAudio.Instance?.Shot(PowerUp.Shockwave);
             float radius=BattleArena.Instance.shockwaveRadius;
             foreach(var target in BattleArena.Instance.Boats)
             {
                 if(target==this || !target.Alive)continue;
                 Vector2 offset=target.transform.position-transform.position;
-                if(offset.magnitude<=radius)target.Hit(8,PowerUp.None,offset.normalized*12);
+                if(offset.magnitude<=radius) {target.Hit(8,PowerUp.Shockwave,offset.normalized*12);BattleAudio.Instance?.Impact(PowerUp.Shockwave,true);}
             }
             foreach(var cargo in BattleArena.Instance.CargoBoats.ToArray())
             {
                 if(cargo==null || !cargo.Alive)continue;
                 Vector2 offset=cargo.transform.position-transform.position;
-                if(offset.magnitude<=radius)cargo.Hit(8,PowerUp.None,offset.normalized*2);
+                if(offset.magnitude<=radius) {cargo.Hit(8,PowerUp.Shockwave,offset.normalized*2);BattleAudio.Instance?.Impact(PowerUp.Shockwave,true);}
             }
             if(BattleVfx.Spawn(BattleArena.Instance.vfx?.shockwave,transform.position)!=null)return;
             var ring=Line("Shockwave",Color.cyan,.12f);ring.loop=true;ring.positionCount=48;
@@ -799,6 +832,7 @@ namespace HarborBattle
         }
         public static void SpawnFromAi(BattleAiBoat source,Vector2 direction,int damage)
         {
+            BattleAudio.Instance?.Shot(PowerUp.None);
             SpawnShot(source.transform,direction,damage,PowerUp.None,true);
         }
         private static void SpawnShot(Transform source,Vector2 direction,int damage,PowerUp effect,bool fromAi)
@@ -850,6 +884,7 @@ namespace HarborBattle
                 Vector2 push=effect==PowerUp.Shotgun360 ? direction*2.5f : Vector2.zero;
                 player?.Hit(damage,effect,push);
                 if(!fromAi) cargo?.Hit(damage,effect,push*.2f);
+                BattleAudio.Instance?.Impact(effect,player!=null || cargo!=null);
                 BattleVfx.Spawn(visuals?.impact,hit.point,null,false,direction);
                 Destroy(gameObject); return;
             }
@@ -896,7 +931,7 @@ namespace HarborBattle
         {
             if(claimed || option==null || Camera.main==null) return;
             var point=Camera.main.WorldToScreenPoint(transform.position);
-            GUI.Label(new Rect(point.x-12,Screen.height-point.y-35,30,25),"?");
+            GUI.Label(new Rect(point.x-20,Screen.height-point.y-48,40,42),"?",new GUIStyle(GUI.skin.label){fontSize=32,fontStyle=FontStyle.Bold,alignment=TextAnchor.MiddleCenter});
         }
     }
 }

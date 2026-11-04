@@ -1,0 +1,133 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95f34f87b0036974a992efc7d88688dd, type: 3}
+  m_Name: BattleAudio
+  m_EditorClassIdentifier: Assembly-CSharp::HarborBattle.BattleAudioProfile
+  music: {fileID: 8300000, guid: d43e61c43df936149975c778bf396b94, type: 3}
+  cannonShot: {fileID: 8300000, guid: 07889f395ed20824f933f7aac8dd0146, type: 3}
+  cannonImpact: {fileID: 8300000, guid: 830e4fdd3d6197c4ba69c297c6613370, type: 3}
+  playerHit: {fileID: 8300000, guid: 830e4fdd3d6197c4ba69c297c6613370, type: 3}
+  playerSink: {fileID: 8300000, guid: 9fd44e0c223d17543b303d11b86529bb, type: 3}
+  cargoHit: {fileID: 8300000, guid: f60765ce2b3a8e947a52199fad1bc0a0, type: 3}
+  cargoSink: {fileID: 8300000, guid: 69c7502c375908243ba0fb4ab6b36143, type: 3}
+  pickup: {fileID: 0}
+  activate: {fileID: 0}
+  expire: {fileID: 0}
+  countdown: {fileID: 0}
+  go: {fileID: 0}
+  victory: {fileID: 0}
+  shieldBlock: {fileID: 8300000, guid: c0528a45bdcfd0e418b689e0eabf8950, type: 3}
+  bubbles: {fileID: 8300000, guid: 66aaede198abdf940ad2207175bdc4dd, type: 3}
+  fogDamage: {fileID: 0}
+  burnLoop: {fileID: 0}
+  musicVolume: 0.3
+  sfxVolume: 0.7
+  maxVoices: 16
+  items:
+  - kind: 1
+    shot: {fileID: 8300000, guid: 07889f395ed20824f933f7aac8dd0146, type: 3}
+    impact: {fileID: 0}
+    activate: {fileID: 0}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 2
+    shot: {fileID: 8300000, guid: 7a5710a78a512a24dbf7587b911558a7, type: 3}
+    impact: {fileID: 0}
+    activate: {fileID: 0}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 3
+    shot: {fileID: 8300000, guid: c0ace774cd16f1841a496443898ab7cb, type: 3}
+    impact: {fileID: 0}
+    activate: {fileID: 0}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 4
+    shot: {fileID: 0}
+    impact: {fileID: 0}
+    activate: {fileID: 8300000, guid: 8b1dadd47d1690948b56a13c11b7cf39, type: 3}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 5
+    shot: {fileID: 0}
+    impact: {fileID: 0}
+    activate: {fileID: 8300000, guid: 5e1b8668cb96a5242bc4c386498e8ace, type: 3}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 6
+    shot: {fileID: 8300000, guid: ca5ee8512d837af4e9b6581d8dc9a35b, type: 3}
+    impact: {fileID: 0}
+    activate: {fileID: 0}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 7
+    shot: {fileID: 8300000, guid: c71059d5f11e6564ea797c450bd2e3d8, type: 3}
+    impact: {fileID: 8300000, guid: 4452db908d87ccc4bace1eddeb2e2504, type: 3}
+    activate: {fileID: 0}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 8
+    shot: {fileID: 0}
+    impact: {fileID: 8300000, guid: 0b372592fd4279e49a12cc045f486147, type: 3}
+    activate: {fileID: 0}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 9
+    shot: {fileID: 8300000, guid: 6395fe5575deee848addb2df52bf1222, type: 3}
+    impact: {fileID: 8300000, guid: ca5ee8512d837af4e9b6581d8dc9a35b, type: 3}
+    activate: {fileID: 0}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 10
+    shot: {fileID: 8300000, guid: 1569f71bfd217e446ae2599bd54dc53e, type: 3}
+    impact: {fileID: 8300000, guid: 6f0b2b716e5c40341a60bc46dd63b881, type: 3}
+    activate: {fileID: 0}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 11
+    shot: {fileID: 8300000, guid: 7a5710a78a512a24dbf7587b911558a7, type: 3}
+    impact: {fileID: 0}
+    activate: {fileID: 0}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 12
+    shot: {fileID: 0}
+    impact: {fileID: 0}
+    activate: {fileID: 8300000, guid: 52f18f6a035b80543baaed078c593fd4, type: 3}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 13
+    shot: {fileID: 0}
+    impact: {fileID: 0}
+    activate: {fileID: 8300000, guid: c79b729c355bcc94aaf4bde873327d50, type: 3}
+    loop: {fileID: 0}
+    end: {fileID: 0}
+    volume: 0.65
+  - kind: 14
+    shot: {fileID: 0}
+    impact: {fileID: 0}
+    activate: {fileID: 8300000, guid: e26f4331a0f5eba459f4f4f2af1350a6, type: 3}
+    loop: {fileID: 0}
+    end: {fileID: 8300000, guid: 8f140de9b56771147859774801c58b00, type: 3}
+    volume: 0.65

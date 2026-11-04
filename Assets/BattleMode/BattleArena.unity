@@ -330,6 +330,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 535e1b0235b14dc42bd6a47799747e4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HarborBattle.BattleArena
+  audioProfile: {fileID: 11400000, guid: e5eb5e5ca3414c8bb3474df6b709ce80, type: 2}
   fogMaterial: {fileID: 2100000, guid: 70e8a0889b12f5d41b85f8f99eac73bb, type: 2}
   fogDamagePerSecond: 10
   fogBoatOpacity: 0.55
