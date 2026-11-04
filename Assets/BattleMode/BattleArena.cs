@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace HarborBattle
 {
@@ -52,6 +54,9 @@ namespace HarborBattle
         [Header("Sea mines (R1 / F): drops the Animal, tuned on its prefab")]
         public GameObject animalPrefab;
         [Min(0)] public int minesPerPlayer=3;
+        [Header("Lives (chosen on the start screen's battle settings)")]
+        [Min(0)] public float respawnDelay=2;
+        [Min(0)] public float respawnInvincibility=2;
         [Min(0)] public float cameraPadding=5;
         [Min(.1f)] public float freezeSeconds=1;
         [Min(.1f)] public float slowSeconds=3;
@@ -78,6 +83,10 @@ namespace HarborBattle
         [Min(.5f)] public float aimGuideLength=2.5f;
         [Min(.01f)] public float aimGuideWidth=.08f;
         [Min(.1f)] public float crosshairSize=.8f;
+        [Header("End screen menu")]
+        public TMP_FontAsset menuFont;
+        public string startScreenScene="StartScreen";
+        [Min(0)] public float endMenuDelay=1.5f;
         [Header("Swappable VFX mappings")]
         public BattleVfxProfile vfx;
         [Header("Random pickup pool (zero weight disables an entry)")]
@@ -111,9 +120,44 @@ namespace HarborBattle
         private static Sprite square;
         private static Material artMaterial;
 
+        // The match result ("Player 1 wins!" / "Draw!") once it ends, otherwise null.
+        public string Result => result;
+        // Read by the HUD.
+        public bool CountingDown => countingDown;
+        public float Countdown => countdown;
+        public int JoinedCount => pads.Count;
+        public bool SoloTest => soloTest;
+        public Camera ArenaCamera => arenaCamera;
+        // Index of the winning player, or -1 for a draw or while the match is running.
+        public int WinnerIndex { get; private set; } = -1;
+        // In a series this plays the next game; once the series is over it starts a fresh one.
+        public void Rematch()
+        {
+            if(BattleLobby.SeriesOver) BattleLobby.ResetSeries();
+            Restart();
+        }
+        public void QuitToStartScreen()
+        {
+            BattleLobby.ResetSeries();
+            SceneManager.LoadScene(startScreenScene);
+        }
+
+        // "P1 2  -  P2 1" for every player in the match.
+        public string SeriesScore
+        {
+            get
+            {
+                var parts=new List<string>();
+                foreach(var boat in Boats) parts.Add("P"+(boat.Index+1)+" "+BattleLobby.Wins[boat.Index]);
+                return string.Join("  -  ",parts);
+            }
+        }
+
         private void Awake()
         {
             Instance = this;
+            gameObject.AddComponent<BattleEndMenu>();
+            gameObject.AddComponent<BattleHud>();
             var cameraObject = Camera.main != null ? Camera.main.gameObject : new GameObject("Arena Camera", typeof(Camera), typeof(AudioListener));
             cameraObject.tag = "MainCamera";
             cameraObject.transform.position = new Vector3(0,0,-10);
@@ -313,15 +357,16 @@ namespace HarborBattle
                     var template=originalPlayerPrefab!=null ? originalPlayerPrefab.GetComponent<PlayerInput>()?.actions : null;
                     lobbyInputs.Add(pad,BattleInput.ForDevice(template,pad));
                 }
-            if (!Running && !countingDown)
+            // Once a match ends the end screen menu takes over, so B/Esc don't reset behind it.
+            if (!Running && !countingDown && result==null)
                 foreach (var pad in Gamepad.all)
                     if (BattleInput.Pressed(lobbyInputs[pad],"Battle/Reset")) { Restart(); break; }
             var keyboard=Keyboard.current;
-            if(keyboard!=null && keyboard.escapeKey.wasPressedThisFrame) Restart();
+            if(keyboard!=null && keyboard.escapeKey.wasPressedThisFrame && result==null) Restart();
             if(keyboard!=null && keyboard.enterKey.wasPressedThisFrame)
             {
-                if(result!=null) Restart();
-                else if(!Running && !countingDown)
+                // After a match the end screen menu handles Enter, so it only starts lobby matches.
+                if(result==null && !Running && !countingDown)
                 {
                     // Enter provides a complete two-player keyboard test without controllers.
                     if(pads.Count==0) { pads.Add(null); SpawnBoat(null,0); pads.Add(null); SpawnBoat(null,1); }
@@ -354,19 +399,30 @@ namespace HarborBattle
                 // A disconnected controller pauses the round rather than eliminating its player.
                 foreach (var pad in pads) if (pad!=null && !pad.added) return;
                 if((cargoTimer-=Time.deltaTime)<=0) {SpawnCargoBoat();cargoTimer=Mathf.Max(.1f,cargoSpawnInterval);}
+                // "alive" counts players still in the match, including ones waiting to respawn.
                 int alive=0; BattleBoat survivor=null;
                 foreach (var boat in Boats)
                 {
-                    if (!boat.Alive) continue;
+                    if (boat.Eliminated) continue;
                     alive++; survivor=boat;
+                    if (!boat.Alive) continue;
                     var pad=pads[boat.Index];
                     boat.Submit(pad==null ? KeyboardCommand(boat) : BattleInput.Read(boat.GetComponent<PlayerInput>()?.actions));
                 }
-                if ((!soloTest && alive<=1) || alive==0) { Running=false; result=alive==1 ? "Player "+(survivor.Index+1)+" wins!" : "Draw!"; }
+                if ((!soloTest && alive<=1) || alive==0)
+                {
+                    Running=false;
+                    WinnerIndex=alive==1 ? survivor.Index : -1;
+                    result=alive==1 ? "Player "+(survivor.Index+1)+" wins!" : "Draw!";
+                    if(!soloTest && BattleLobby.IsSeries)
+                    {
+                        BattleLobby.RecordGame(WinnerIndex);
+                        int champion=BattleLobby.SeriesWinner;
+                        if(champion>=0) { result="Player "+(champion+1)+" wins the series!"; WinnerIndex=champion; }
+                        else result=(alive==1 ? "Player "+(survivor.Index+1)+" wins" : "Draw in")+" game "+BattleLobby.GamesPlayed+"!";
+                    }
+                }
             }
-            if (result!=null)
-                foreach (var pad in Gamepad.all)
-                    if (BattleInput.Pressed(lobbyInputs[pad],"Battle/StartMatch")) { Restart(); break; }
         }
 
         private void SpawnLobbyPlayers()
@@ -437,6 +493,8 @@ namespace HarborBattle
             var boat=obj.GetComponent<BattleBoat>() ?? obj.AddComponent<BattleBoat>();
             boat.Index=index;
             boat.Mines=minesPerPlayer;
+            boat.Lives=BattleLobby.Lives;
+            boat.SpawnPoint=positions[index];
             var campaignController=obj.GetComponent<PlayerController>();
             if(campaignController!=null) campaignController.enabled=false;
             var campaignHealth=obj.GetComponent<PlayerHealth>();
@@ -497,44 +555,11 @@ namespace HarborBattle
             foreach(var cargo in CargoBoats) if(cargo!=null) {cargo.gameObject.SetActive(false);Destroy(cargo.gameObject);}
             CargoBoats.Clear();
             foreach(var drop in FindObjectsByType<BattlePickup>(FindObjectsSortMode.None)) {drop.gameObject.SetActive(false);Destroy(drop.gameObject);}
-            Boats.Clear(); pads.Clear(); result=null; Running=false; countingDown=false; soloTest=false;
+            Boats.Clear(); pads.Clear(); result=null; WinnerIndex=-1; Running=false; countingDown=false; soloTest=false;
             // Start-screen matches rematch with the same players instead of reopening the lobby.
             if (BattleLobby.HasPlayers) SpawnLobbyPlayers();
         }
 
-        private void OnGUI()
-        {
-            var style=new GUIStyle(GUI.skin.label) { fontSize=16, alignment=TextAnchor.MiddleCenter, wordWrap=true };
-            string heading=result ?? (countingDown ? "Ready: "+Mathf.CeilToInt(countdown) : Running ? (CanSimulate ? (soloTest ? "SOLO TEST" : "LAST BOAT AFLOAT") : "Reconnect controller to resume") : pads.Count+" / 4 joined\nSTART: join; press again to start (one player = solo test)\nENTER: add keyboard opponent / start");
-            float panelWidth=Mathf.Min(230,Screen.width*.27f);
-            GUI.Label(new Rect(panelWidth+20,8,Screen.width-2*panelWidth-40,65),heading,style);
-            if(!Running)
-            {
-                GUI.Box(new Rect(Screen.width*.2f,Screen.height*.43f,Screen.width*.6f,100),GUIContent.none);
-                GUI.Label(new Rect(Screen.width*.22f,Screen.height*.44f,Screen.width*.56f,95),
-                    "P1: WASD / mouse / click / E offense / Shift defense / F mine\nP2: arrows / Right Ctrl fire / Enter offense / Right Shift defense / slash mine\nController: sticks / RT fire / X offense / LT defense / RB mine\nEsc: lobby",style);
-            }
-            for(int i=0;i<Boats.Count;i++)
-            {
-                float x=i%2==0 ? 12 : Screen.width-panelWidth-12;
-                float y=i<2 ? 12 : Screen.height-128;
-                GUI.color=Color.white;
-                GUI.Box(new Rect(x,y,panelWidth,116),GUIContent.none);
-                var boat=Boats[i];
-                GUI.Label(new Rect(x+10,y+5,panelWidth-20,24),"P"+(i+1)+"  "+(boat.Alive ? "Hull: "+boat.Health+" / 100  Mines: "+boat.Mines+(IsInFog(boat.transform.position) ? "  FOG!" : "") : "ELIMINATED"));
-                GUI.color=new Color(.08f,.1f,.12f);
-                GUI.DrawTexture(new Rect(x+10,y+32,panelWidth-20,14),Texture2D.whiteTexture);
-                GUI.color=BattleLobby.PlayerColor(i);
-                GUI.DrawTexture(new Rect(x+10,y+32,(panelWidth-20)*Mathf.Clamp01(boat.Health/100f),14),Texture2D.whiteTexture);
-                GUI.Label(new Rect(x+10,y+52,panelWidth-20,60),boat.PowerLabel);
-                if(boat.Alive && !boat.IsHidden)
-                {
-                    var position=arenaCamera.WorldToScreenPoint(boat.transform.position);
-                    GUI.Label(new Rect(position.x-20,Screen.height-position.y-55,55,25),"P"+(i+1));
-                }
-            }
-            GUI.color=Color.white;
-        }
     }
 
     public class BattleBoat : MonoBehaviour
@@ -554,7 +579,12 @@ namespace HarborBattle
         public bool CanBeTargeted => Alive && !IsHidden;
         private PowerUp weapon => offense.Active?.kind ?? PowerUp.None;
         private PowerUp protection => defense.Active?.kind ?? PowerUp.None;
-        private bool Invincible => protection==PowerUp.Shield || protection==PowerUp.Star;
+        private bool Invincible => protection==PowerUp.Shield || protection==PowerUp.Star || spawnProtection>0;
+        // Lives (stocks): losing all hull costs a life; the boat respawns until none are left.
+        public int Lives { get; set; }
+        public Vector2 SpawnPoint { get; set; }
+        public bool Eliminated => !Alive && Lives<=0;
+        private float respawnTimer,spawnProtection;
         private readonly FogExposure fog=new FogExposure();
         private readonly System.Collections.Generic.Dictionary<SpriteRenderer,Color> originalColors=new System.Collections.Generic.Dictionary<SpriteRenderer,Color>();
         private float cooldown,frozen,slowed,burning,burnTick,waveTimer,bubbleTimer,starHue;
@@ -641,14 +671,32 @@ namespace HarborBattle
                 GetComponent<Collider2D>().enabled=false;
                 foreach(var effect in new[] {burnVisual,freezeVisual,slowVisual}) if(effect!=null) Destroy(effect);
                 BattleVfx.Spawn(BattleArena.Instance.vfx?.boatExplosion,transform.position);
+                Lives=Mathf.Max(0,Lives-1);
+                respawnTimer=BattleArena.Instance.respawnDelay;
             }
+        }
+        private void Respawn()
+        {
+            var arena=BattleArena.Instance;
+            Health=100;
+            frozen=slowed=burning=burnTick=0;knockback=Vector2.zero;
+            transform.position=SpawnPoint;
+            var body=GetComponent<Rigidbody2D>();body.position=SpawnPoint;body.linearVelocity=Vector2.zero;
+            GetComponent<Collider2D>().enabled=true;
+            spawnProtection=arena.respawnInvincibility;
         }
         private void FixedUpdate()
         {
             var body=GetComponent<Rigidbody2D>();body.linearVelocity=Vector2.zero;
             var arena=BattleArena.Instance;
-            if(!Alive || !arena.CanSimulate) return;
+            if(!arena.CanSimulate) return;
             float dt=Time.fixedDeltaTime;
+            if(!Alive)
+            {
+                if(Lives>0 && (respawnTimer-=dt)<=0) Respawn();
+                return;
+            }
+            spawnProtection=Mathf.Max(0,spawnProtection-dt);
             ActivateItems();offense.Tick(dt);
             if(mineRequested)
             {
@@ -712,7 +760,10 @@ namespace HarborBattle
             {
                 if(!originalColors.ContainsKey(sprite)) originalColors.Add(sprite,sprite.color);
                 Color color=Alive ? (protection==PowerUp.Star ? Color.HSVToRGB(starHue,1,1) : originalColors[sprite]) : Color.gray;
-                color.a=BattleArena.Instance.IsInFog(transform.position) ? BattleArena.Instance.fogBoatOpacity : 1;sprite.color=color;
+                color.a=BattleArena.Instance.IsInFog(transform.position) ? BattleArena.Instance.fogBoatOpacity : 1;
+                // Blink while respawn invincibility lasts.
+                if(Alive && spawnProtection>0 && Mathf.Repeat(Time.time*8,1)<.5f) color.a*=.3f;
+                sprite.color=color;
             }
             BattleVisibility.Apply(transform,IsHidden);
             UpdateLaserGuide();

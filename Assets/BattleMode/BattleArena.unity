@@ -365,6 +365,7 @@ MonoBehaviour:
   shotArt: {fileID: 6635707809435179332, guid: edbec22aebf34a34aa778348a7cefcc2, type: 3}
   originalPlayerPrefab: {fileID: 473378636629930842, guid: 682165561cd68334db40c6b988220a6b, type: 3}
   crosshairArt: {fileID: -6142374563283994760, guid: 7f97f7ed8c4e6f8408af6deda087383d, type: 3}
+  menuFont: {fileID: 11400000, guid: 22c3315eec03f5741ba7520435e1edd6, type: 2}
   vfx: {fileID: 11400000, guid: 83f68de8837349209dc35705f97ea810, type: 2}
   pickupPool:
   - kind: 1
